@@ -1,0 +1,77 @@
+{
+  "firstnames_no_diac": {
+    "M": [
+      "adam", "adrian", "alexandr", "alexander", "alois", "andrea", "andrej", "antonin", "anton", "artur", "bedrich", "benedikt", "benjamin", "bernard", "blazej", "bohumil", "bohuslav", "boris", "bretislav", "bruno", "bystrik", "cestmir", "cestmír", "daniel", "david", "denis", "dominik", "drahoslav", "dusan", "dušan", "eduard", "emil", "erik", "evzen", "evžen", "frantisek", "františek", "gabriel", "gregor", "gustav", "henry", "honza", "hubert", "hynek", "igor", "ivan", "ivo", "jakub", "jan", "jaromir", "jaromír", "jaroslav", "jindrich", "jindřich", "jiri", "jiří", "josef", "julius", "kamil", "karel", "kristian", "kristof", "kryštof", "lubomir", "lubomír", "lubos", "luboš", "ludek", "luděk", "ludvik", "ludvík", "lukas", "lukáš", "marcel", "marek", "marián", "martin", "matej", "matěj", "michael", "michal", "milan", "milos", "miloš", "miloslav", "mirek", "miroslav", "mohamed", "nathan", "neil", "nikolas", "nikolay", "ondrej", "ondřej", "oskar", "pavel", "petr", "peter", "radim", "radomir", "radomír", "radek", "rádek", "radovan", "richard", "robert", "roman", "rostislav", "rudolf", "samuel", "sebastian", "sebastián", "stanislav", "stefan", "stepan", "štěpán", "svatopluk", "tadeas", "tadeáš", "tomas", "tomáš", "vaclav", "václav", "valentin", "vavrinec", "vavřinec", "vilem", "vilém", "vincent", "vitezslav", "vítězslav", "vladimir", "vladimír", "vlastimil", "vojtech", "vojtěch", "zbynek", "zbyňek", "zdenek", "zdeněk", "zdislav", "zdislav", "zigmund", "zigmund"
+    ],
+    "F": [
+      "adela", "adéla", "adriana", "alena", "alice", "alžběta", "amanda", "anastazie", "anastázie", "andrea", "anna", "antonie", "barbora", "beatrice", "berenika", "berenika", "blanka", "bozena", "božena", "dana", "daniela", "dasa", "dáša", "denisa", "dominika", "drahomira", "drahomíra", "eliska", "eliška", "emilie", "eva", "evelina", "evelína", "frantiska", "františka", "gabriela", "helena", "ivana", "iveta", "jana", "jarmila", "jirina", "jiřina", "johana", "jolana", "josefina", "julie", "juliana", "karla", "karolina", "karolína", "katerina", "kateřina", "klara", "klára", "kristyna", "kristýna", "kristina", "kristína", "kvetoslava", "květa", "květa", "lada", "ladislava", "lenka", "libuse", "libuše", "lucie", "ludmila", "magdalena", "magdaléna", "marcela", "margita", "margita", "marie", "mariana", "marketa", "markéta", "martina", "michaela", "milada", "milena", "mirka", "miroslava", "monika", "naděžda", "nela", "nikola", "olga", "pavla", "petra", "radka", "renata", "romana", "ruzena", "růžena", "sandra", "sara", "sára", "simona", "simona", "sofie", "sofie", "stana", "stanislava", "stela", "stela", "sylva", "sylvie", "tana", "táňa", "tereza", "tereza", "valerie", "valérie", "vera", "věra", "veronika", "veronika", "vlasta", "zdenka", "zdenka", "zuzana", "zuzana"
+    ]
+  },
+  "surnames": {
+    "common": [
+      "novak", "nováková", "svoboda", "svobodová", "novotny", "novotný", "novotná", "dvorak", "dvořák", "dvořáková", "cerny", "černý", "černá", "prochazka", "procházka", "procházková", "kucera", "kučera", "kučerová", "vesely", "veselý", "veselá", "horak", "horák", "horáková", "nemec", "němec", "němcová", "pokorny", "pokorný", "pokorná", "pospisil", "pospisilová", "havel", "havlová", "jelinek", "jelínková", "krejci", "krejčí", "krejčí", "kral", "král", "králová", "blazek", "bláže", "bláže", "mach", "machová", "stepanek", "štěpánek", "štěpánková", "kolar", "kolář", "kolářová", "urban", "urbanová", "bartos", "bartoš", "bartošová", "richter", "richterová", "simon", "simonová", "kraus", "krausová", "zeman", "zemanová", "hajek", "háje", "háje", "musil", "musilová", "moravec", "moravcová", "benes", "beneš", "benešová", "fiala", "fialová", "sedlacek", "sedláče", "sedláče", "dolezal", "doležal", "doležalová", "marecek", "mareče", "mala", "malá", "sucha", "suchá", "riha", "říha", "říhová"
+    ]
+  },
+  "declensions": {
+    "male_firstnames": {
+      "patterns": [
+        {"suffix": "a", "nominative": "", "examples": ["lukas", "lukáš"]},
+        {"suffix": "ovi", "nominative": "", "examples": ["lukasovi", "lukášovi"]},
+        {"suffix": "em", "nominative": "", "examples": ["lukasem", "lukášem"]},
+        {"suffix": "u", "nominative": "", "examples": ["lukasu", "lukášu"]},
+        {"suffix": "e", "nominative": "", "examples": ["lukase", "lukáše"]},
+        {"suffix": "ka", "nominative": "ek", "examples": ["marek", "mareka"]},
+        {"suffix": "la", "nominative": "el", "examples": ["daniel", "daniela"]},
+        {"suffix": "ice", "nominative": "ika", "examples": ["michal", "michalice"]},
+        {"suffix": "ře", "nominative": "ra", "examples": ["petr", "petře"]}
+      ]
+    },
+    "female_firstnames": {
+      "patterns": [
+        {"suffix": "y", "nominative": "a", "examples": ["klara", "kláry"]},
+        {"suffix": "e", "nominative": "a", "examples": ["klara", "kláře"]},
+        {"suffix": "ě", "nominative": "a", "examples": ["klara", "kláře"]},
+        {"suffix": "u", "nominative": "a", "examples": ["klara", "kláru"]},
+        {"suffix": "ou", "nominative": "a", "examples": ["klara", "klárou"]},
+        {"suffix": "o", "nominative": "a", "examples": ["klara", "kláro"]},
+        {"suffix": "inou", "nominative": "ina", "examples": ["veronika", "veronikou"]},
+        {"suffix": "iné", "nominative": "ina", "examples": ["veronika", "veroniké"]},
+        {"suffix": "inu", "nominative": "ina", "examples": ["veronika", "veroniku"]},
+        {"suffix": "iny", "nominative": "ina", "examples": ["veronika", "veroniky"]},
+        {"suffix": "iným", "nominative": "ina", "examples": ["veronika", "veronikým"]},
+        {"suffix": "iných", "nominative": "ina", "examples": ["veronika", "veronikých"]}
+      ]
+    },
+    "surnames": {
+      "patterns": [
+        {"suffix": "ovou", "nominative": "ová", "examples": ["nováková", "novákovou"]},
+        {"suffix": "ové", "nominative": "á", "examples": ["malá", "malé"]},
+        {"suffix": "é", "nominative": "á", "examples": ["malá", "malé"]},
+        {"suffix": "ou", "nominative": "á", "examples": ["malá", "malou"]},
+        {"suffix": "ovi", "nominative": "", "examples": ["novak", "novakovi"]},
+        {"suffix": "em", "nominative": "", "examples": ["novak", "novakem"]},
+        {"suffix": "u", "nominative": "", "examples": ["novak", "novaku"]},
+        {"suffix": "e", "nominative": "", "examples": ["novak", "novake"]},
+        {"suffix": "y", "nominative": "", "examples": ["novak", "novaky"]},
+        {"suffix": "ům", "nominative": "", "examples": ["novak", "novakům"]},
+        {"suffix": "ách", "nominative": "", "examples": ["novak", "novakách"]},
+        {"suffix": "ka", "nominative": "ek", "examples": ["marecek", "marečka"]},
+        {"suffix": "kovi", "nominative": "ek", "examples": ["marecek", "marečkovi"]},
+        {"suffix": "kem", "nominative": "ek", "examples": ["marecek", "marečkem"]},
+        {"suffix": "ku", "nominative": "ek", "examples": ["marecek", "marečku"]},
+        {"suffix": "ke", "nominative": "ek", "examples": ["marecek", "marečke"]},
+        {"suffix": "c", "nominative": "ec", "examples": ["dolezal", "dolezalc"]},
+        {"suffix": "ce", "nominative": "ec", "examples": ["dolezal", "dolezalce"]},
+        {"suffix": "ci", "nominative": "ec", "examples": ["dolezal", "dolezalci"]},
+        {"suffix": "cem", "nominative": "ec", "examples": ["dolezal", "dolezalcem"]},
+        {"suffix": "ců", "nominative": "ec", "examples": ["dolezal", "dolezalců"]},
+        {"suffix": "cích", "nominative": "ec", "examples": ["dolezal", "dolezalcích"]},
+        {"suffix": "cům", "nominative": "ec", "examples": ["dolezal", "dolezalcům"]},
+        {"suffix": "cech", "nominative": "ec", "examples": ["dolezal", "dolezalcech"]},
+        {"suffix": "cemi", "nominative": "ec", "examples": ["dolezal", "dolezalcemi"]},
+        {"suffix": "cu", "nominative": "ec", "examples": ["dolezal", "dolezalcu"]},
+        {"suffix": "cy", "nominative": "ec", "examples": ["dolezal", "dolezalcy"]}
+      ]
+    }
+  }
+}

@@ -9,6 +9,7 @@ OSOBY
 [[PERSON_5]]: Petry Novotné
 [[PERSON_6]]: Veronika Suchá
 [[PERSON_6]]: Veronice Suché
+[[PERSON_7]]: Michal Říha
 [[PERSON_7]]: Michalu Říhovi
 
 BANKOVNÍ ÚČTY

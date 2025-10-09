@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Czech DOCX Anonymizer – v6.1
+Czech DOCX Anonymizer – v6.2
 - Načítá jména z JSON knihovny (cz_names.v1.json)
+- Vylepšená detekce skloňovaných jmen
 - Opraveno: BANK vs OP, falešné osoby, adresy
 Výstupy: <basename>_anon.docx / _map.json / _map.txt
 """
@@ -51,31 +52,40 @@ def preserve_case(surface: str, tag: str) -> str:
     return tag
 
 # =============== Načtení knihovny jmen ===============
-def load_names_library(json_path: str = "cz_names.v1.json") -> Set[str]:
+def load_names_library(json_path: str = "cz_names.v1.json") -> tuple:
     try:
         script_dir = Path(__file__).parent if '__file__' in globals() else Path.cwd()
         json_file = script_dir / json_path
         
         if not json_file.exists():
             print(f"⚠️  Varování: {json_path} nenalezen, používám prázdnou knihovnu!")
-            return set()
+            return set(), set(), {}
         
         with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
-        names = set()
-        if 'firstnames_no_diac' in data:
-            names.update(data['firstnames_no_diac'].get('M', []))
-            names.update(data['firstnames_no_diac'].get('F', []))
+        firstnames = set()
+        surnames = set()
+        declensions = {}
         
-        print(f"✓ Načteno {len(names)} jmen z knihovny")
-        return names
+        if 'firstnames_no_diac' in data:
+            firstnames.update(data['firstnames_no_diac'].get('M', []))
+            firstnames.update(data['firstnames_no_diac'].get('F', []))
+        
+        if 'surnames' in data:
+            surnames.update(data['surnames'].get('common', []))
+        
+        if 'declensions' in data:
+            declensions = data['declensions']
+        
+        print(f"✓ Načteno {len(firstnames)} křestních jmen a {len(surnames)} příjmení z knihovny")
+        return firstnames, surnames, declensions
         
     except Exception as e:
         print(f"⚠️  Chyba při načítání: {e}")
-        return set()
+        return set(), set(), {}
 
-CZECH_FIRST_NAMES = load_names_library()
+CZECH_FIRST_NAMES, CZECH_SURNAMES, DECLENSIONS = load_names_library()
 
 # =============== Blacklisty ===============
 SURNAME_BLACKLIST = {
@@ -96,8 +106,40 @@ ROLE_STOP = {
     'elektřina','vodné','stočné','topení','internet','služba','služby'
 }
 
-# =============== Inference nominativu ===============
+# =============== Vylepšená inference nominativu ===============
+def _apply_declension_rules(word: str, declension_type: str) -> Optional[str]:
+    """Aplikuje pravidla skloňování z JSON knihovny"""
+    if not DECLENSIONS or declension_type not in DECLENSIONS:
+        return None
+    
+    word_lower = word.lower()
+    patterns = DECLENSIONS[declension_type].get('patterns', [])
+    
+    for pattern in patterns:
+        suffix = pattern['suffix']
+        nominative_suffix = pattern['nominative']
+        
+        if word_lower.endswith(suffix) and len(word) > len(suffix):
+            stem = word[:-len(suffix)]
+            candidate = stem + nominative_suffix
+            
+            # Zkontroluj, jestli je kandidát v knihovně
+            if declension_type == 'male_firstnames' or declension_type == 'female_firstnames':
+                if normalize_for_matching(candidate) in CZECH_FIRST_NAMES:
+                    return candidate
+            elif declension_type == 'surnames':
+                if normalize_for_matching(candidate) in CZECH_SURNAMES:
+                    return candidate
+    
+    return None
+
 def _male_genitive_to_nominative(obs: str) -> Optional[str]:
+    # Nejdříve zkus JSON pravidla
+    result = _apply_declension_rules(obs, 'male_firstnames')
+    if result:
+        return result
+    
+    # Fallback na původní logiku
     lo = obs.lower()
     cands = []
     if lo.endswith('ka') and len(obs) > 2:
@@ -154,6 +196,13 @@ def infer_first_name_nominative(observed: str, surname_observed: str = "") -> Op
 
 def infer_surname_nominative(observed: str) -> str:
     if not observed: return observed
+    
+    # Nejdříve zkus JSON pravidla
+    result = _apply_declension_rules(observed, 'surnames')
+    if result:
+        return result
+    
+    # Fallback na původní logiku
     obs = observed.strip()
     low = obs.lower()
 
@@ -604,8 +653,8 @@ def main():
     args = ap.parse_args()
 
     if args.names_json != "cz_names.v1.json":
-        global CZECH_FIRST_NAMES
-        CZECH_FIRST_NAMES = load_names_library(args.names_json)
+        global CZECH_FIRST_NAMES, CZECH_SURNAMES, DECLENSIONS
+        CZECH_FIRST_NAMES, CZECH_SURNAMES, DECLENSIONS = load_names_library(args.names_json)
 
     path = Path(args.docx_path) if args.docx_path else Path(input("Přetáhni sem .docx soubor nebo napiš cestu: ").strip().strip('"'))
     if not path.exists():
