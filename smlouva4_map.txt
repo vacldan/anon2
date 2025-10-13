@@ -5,12 +5,12 @@ OSOBY
 [[PERSON_2]]: Jakub Doležal
 [[PERSON_3]]: Klára Malá
 [[PERSON_3]]: Kláry Malé
-[[PERSON_5]]: Petra Novotná
-[[PERSON_5]]: Petry Novotné
-[[PERSON_6]]: Veronika Suchá
-[[PERSON_6]]: Veronice Suché
-[[PERSON_7]]: Michal Říha
-[[PERSON_7]]: Michalu Říhovi
+[[PERSON_4]]: Petra Novotná
+[[PERSON_4]]: Petry Novotné
+[[PERSON_5]]: Veronika Suchá
+[[PERSON_5]]: Veronice Suché
+[[PERSON_6]]: Michal Říha
+[[PERSON_6]]: Michalu Říhovi
 
 BANKOVNÍ ÚČTY
 -------------
