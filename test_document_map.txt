@@ -1,0 +1,17 @@
+OSOBY
+-----
+[[PERSON_1]]: Michal Říha
+[[PERSON_2]]: Klára Svobodová
+
+TELEFONY
+--------
+[[PHONE_1]]: +420 123 456 789
+
+EMAILY
+------
+[[EMAIL_1]]: test@example.com
+
+ADRESY
+------
+[[ADDRESS_1]]: Václavské náměstí 1, 110 00 Praha
+

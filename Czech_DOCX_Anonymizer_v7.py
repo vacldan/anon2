@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Czech DOCX Anonymizer – v6.1
+Czech DOCX Anonymizer – v7.0
 - Načítá jména z JSON knihovny (cz_names.v1.json)
-- Opraveno: BANK vs OP, falešné osoby, adresy
+- ANONIMIZUJE POUZE JMÉNA Z KNIHOVNY
+- Ostatní citlivé údaje se anonimizují normálně
 Výstupy: <basename>_anon.docx / _map.json / _map.txt
 """
 
@@ -308,6 +309,7 @@ class Anonymizer:
         return tag
 
     def _extract_persons_to_index(self, text: str):
+        """Extrahuje pouze jména, která jsou v knihovně"""
         text_no_titles = TITLES_RE.sub('', text)
         for m in PAIR_RE.finditer(text_no_titles):
             s, e = m.span()
@@ -330,13 +332,15 @@ class Anonymizer:
             f_nom = infer_first_name_nominative(f_tok, l_tok) or f_tok
             l_nom = infer_surname_nominative(l_tok)
 
+            # POUZE anonimizovat jména, která jsou v knihovně
             if normalize_for_matching(f_nom) in CZECH_FIRST_NAMES:
                 self._ensure_person_tag(f_nom, l_nom)
                 continue
-            # Odebrat logiku pro anonimizaci jmen mimo knihovnu
+
             # Jména, která nejsou v knihovně, se neanonimizují
 
     def _apply_known_people(self, text: str) -> str:
+        """Aplikuje anonimizaci pouze na známá jména z knihovny"""
         for p in self.canonical_persons:
             tag = self._ensure_person_tag(p['first'], p['last'])
             for pat in sorted(self.person_variants[tag], key=len, reverse=True):
@@ -368,6 +372,7 @@ class Anonymizer:
         return text
 
     def _replace_remaining_people(self, text: str) -> str:
+        """Nahrazuje zbývající jména - POUZE ty z knihovny"""
         text_no_titles = TITLES_RE.sub('', text)
         offset = 0
         for m in list(PAIR_RE.finditer(text_no_titles)):
@@ -383,9 +388,7 @@ class Anonymizer:
                 continue
 
             f_nom = infer_first_name_nominative(f_tok, l_tok) or f_tok
-            pre = text[max(0, s-160):s]
-            post = text[e:e+160]
-            has_ctx = CTX_PERSON.search(pre+post) or CTX_ROLE.search(pre+post) or CTX_LABEL.search(pre+post)
+
             # POUZE anonimizovat jména, která jsou v knihovně
             if normalize_for_matching(f_nom) not in CZECH_FIRST_NAMES:
                 continue
@@ -412,6 +415,7 @@ class Anonymizer:
         return rx.sub(repl, text)
 
     def anonymize_entities(self, text: str) -> str:
+        """Anonimizuje ostatní citlivé údaje (adresy, telefony, emaily, atd.)"""
         text = self._replace_entity(text, EMAIL_RE, 'EMAIL')
 
         def addr_repl(m):
@@ -546,6 +550,7 @@ class Anonymizer:
             pieces.append(clean_invisibles(get_text(p)))
         self.source_text = '\n'.join(pieces)
 
+        # Extrahuje pouze jména z knihovny
         self._extract_persons_to_index(self.source_text)
 
         for p in iter_paragraphs(doc):
@@ -590,7 +595,7 @@ class Anonymizer:
 
 def main():
     import argparse
-    ap = argparse.ArgumentParser(description="Anonymizace českých DOCX s JSON knihovnou jmen")
+    ap = argparse.ArgumentParser(description="Anonymizace českých DOCX s JSON knihovnou jmen - POUZE JMÉNA Z KNIHOVNY")
     ap.add_argument("docx_path", nargs='?', help="Cesta k .docx souboru")
     ap.add_argument("--names-json", default="cz_names.v1.json", help="Cesta k JSON knihovně jmen")
     args = ap.parse_args()
@@ -610,6 +615,7 @@ def main():
     out_txt  = path.parent / f"{base}_map.txt"
     
     print(f"\n🔍 Zpracovávám: {path.name}")
+    print("📋 POUZE jména z knihovny budou anonimizována")
     a = Anonymizer(verbose=False)
     a.anonymize_docx(str(path), str(out_docx), str(out_json), str(out_txt))
     
@@ -618,7 +624,7 @@ def main():
     print(f" - {out_json}")
     print(f" - {out_txt}")
     print(f"\n📊 Statistiky:")
-    print(f" - Nalezeno osob: {len(a.canonical_persons)}")
+    print(f" - Nalezeno osob (z knihovny): {len(a.canonical_persons)}")
     print(f" - Celkem tagů: {sum(a.counter.values())}")
 
 if __name__ == "__main__":
