@@ -1,19 +1,19 @@
 OSOBY
 -----
-[[PERSON_10]]: Alena Svobodová
-[[PERSON_10]]: Alenou Svobodovou
-[[PERSON_11]]: David Urban
+[[PERSON_10]]: David Urban
 [[PERSON_1]]: Radek Procházka
 [[PERSON_1]]: Radka Procházky
-[[PERSON_3]]: Tomáš Holý
-[[PERSON_4]]: Barbora Veselá
-[[PERSON_5]]: Helena Krátká
-[[PERSON_5]]: Helenou Krátkou
-[[PERSON_6]]: Marek Beneš
-[[PERSON_7]]: Tereza Kolářová
-[[PERSON_7]]: Terezou Kolářovou
-[[PERSON_8]]: Lucie Němcová
-[[PERSON_9]]: Pavel Jelínek
+[[PERSON_2]]: Tomáš Holý
+[[PERSON_3]]: Barbora Veselá
+[[PERSON_4]]: Helena Krátká
+[[PERSON_4]]: Helenou Krátkou
+[[PERSON_5]]: Marek Beneš
+[[PERSON_6]]: Tereza Kolářová
+[[PERSON_6]]: Terezou Kolářovou
+[[PERSON_7]]: Lucie Němcová
+[[PERSON_8]]: Pavel Jelínek
+[[PERSON_9]]: Alena Svobodová
+[[PERSON_9]]: Alenou Svobodovou
 
 DATA
 ----

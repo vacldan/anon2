@@ -36,7 +36,6 @@ DATA
 
 ADRESY
 ------
-[[ADDRESS_1]]: na adrese U Stadionu 25, 779 00 Olomouc
-[[ADDRESS_2]]: Čechova 14, 750 02 Přerov
-[[ADDRESS_3]]: Kapucínská 8, 602 00 Brno
+[[ADDRESS_1]]: Čechova 14, 750 02 Přerov
+[[ADDRESS_2]]: Kapucínská 8, 602 00 Brno
 

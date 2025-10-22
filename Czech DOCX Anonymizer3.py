@@ -636,7 +636,31 @@ def variants_for_surname(surname: str) -> set:
     return out
 
 # =============== Regexy ===============
-ADDRESS_RE = re.compile(r'(?<!\[)\b[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][^\n\r,\[\]]{2,50}?\s+\d{1,4}(?:/\d{1,4})?,[ \t]*\d{3}[ \t]?\d{2}[ \t]+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][^\n\r,\[\]]{1,40}\b', re.UNICODE)
+# Vylepšený ADDRESS_RE - zachytává jen čistou adresu (Ulice číslo, PSČ Město)
+# Zastaví se před: RČ, IČO, Tel, E-mail, OP, Datum, atd.
+# Podporuje i prefixy jako "trvale bytem", "bytem", atd.
+ADDRESS_RE = re.compile(
+    r'(?<!\[)'                                       # Ne po '['
+    r'(?:(?:trvale\s+)?bytem\s+|'                    # Volitelný prefix "trvale bytem" nebo "bytem"
+    r'(?:trvalé\s+)?bydlišt[eě]\s*:\s*|'            # nebo "trvalé bydliště:"
+    r'(?:sídlo(?:\s+podnikání)?|se\s+sídlem)\s*:\s*|'  # nebo "sídlo:" / "se sídlem:"
+    r'(?:místo\s+podnikání)\s*:\s*|'                # nebo "místo podnikání:"
+    r'(?:adresa|trvalý\s+pobyt)\s*:\s*)?'           # nebo "adresa:" / "trvalý pobyt:"
+    r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek ulice)
+    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (malá písmena a mezery)
+    r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (např. 25 nebo 25/8)
+    r',\s*'                                          # Čárka a mezery
+    r'\d{3}\s?\d{2}'                                 # PSČ (např. 612 00)
+    r'\s+'                                           # Mezera
+    r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
+    r'[a-záčďéěíňóřšťúůýž\s]{1,40}?'                # Název města (včetně víc slovných - České Budějovice)
+    r'(?=\s*(?:RČ|Rodn[éě]|IČO|DIČ|Tel\.|Telefon|Kontakt|'  # Zastaví se před klíčovými slovy
+    r'E-mail|e-mail|OP[:)]|Občansk|Číslo\s+OP|'
+    r'Datum\s+naroz|Nar\.|'
+    r'Zastoupen|Jednatel|Zaměst|Prodáv|Kupuj|'
+    r'Pronaj|Nájemce|$))',                          # nebo konec řádku
+    re.UNICODE | re.IGNORECASE
+)
 ACCT_RE    = re.compile(r'\b(?:\d{1,6}-)?\d{2,10}/\d{4}\b')
 BIRTHID_RE = re.compile(r'\b\d{6}\s*/\s*\d{3,4}\b')
 IDCARD_RE  = re.compile(r'\b\d{6,9}/\d{3,4}\b|\b\d{9}\b|[A-Z]{2,3}[ \t]?\d{6,9}\b')
@@ -825,10 +849,24 @@ class Anonymizer:
 
         def addr_repl(m):
             v = m.group(0).strip()
-            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Adresa)\s*:\s*', '', v, flags=re.IGNORECASE)
+
+            # Odstranění běžných prefixů adres (s dvojtečkou)
+            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+podnikání|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:\s*', '', v, flags=re.IGNORECASE)
+
+            # Odstranění běžných prefixů adres (bez dvojtečky)
+            v = re.sub(r'^(trvale\s+)?bytem\s+', '', v, flags=re.IGNORECASE)
+
+            # Odstranění kontextových frází
             v = re.sub(r'^.{0,30}?\b(na\s+adrese|v\s+domě|domu)\s+', '', v, flags=re.IGNORECASE)
+
+            # Odstranění závorek a všeho v nich
+            v = re.sub(r'\s*\(.*?\)\s*', ' ', v, flags=re.IGNORECASE)
             v = re.sub(r'\s*\(dále\s+jen.*$', '', v, flags=re.IGNORECASE)
+
+            # Odstranění přebytečných mezer
+            v = re.sub(r'\s+', ' ', v)
             v = v.strip()
+
             if not v:
                 return m.group(0)
             tag = self._get_or_create_tag('ADDRESS', v)
