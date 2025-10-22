@@ -89,6 +89,7 @@ CZECH_FIRST_NAMES = load_names_library()
 
 # =============== Blacklisty ===============
 SURNAME_BLACKLIST = {
+    # Právní termíny
     'smlouva','smlouvě','smlouvy','smlouvou','článek','článku','články',
     'datum','číslo','adresa','bydliště','průkaz','občanský','rodné','zákon','sb','kč','čr',
     'ustanovení','příloha','titul','oddíl','bod','pověřený','zástupce','nájem','pronájem',
@@ -96,14 +97,36 @@ SURNAME_BLACKLIST = {
     'užívat','hlásit','nepřenechávat','elektřina','plyn','sconto','bolton','předat','předání',
     'cena','kauce','záloha','platba','sankce','odpovědnost','poškození','opravy','závady',
     'přepis','přepisem','vyúčtování','paušálně','roční','měsíční',
-    'jena','dominik','ikea','gorenje','bosch','möbelix'
+
+    # Značky a produkty
+    'jena','dominik','ikea','gorenje','bosch','möbelix',
+
+    # Značky aut
+    'škoda','skoda','octavia','fabia','rapid','superb','kodiaq','kamiq','scala','enyaq',
+    'volkswagen','audi','seat','bmw','mercedes','toyota','honda','ford','opel','renault',
+    'peugeot','citroen','fiat','volvo','mazda','nissan','hyundai','kia',
+
+    # Geografické názvy (s i bez diakritiky)
+    'praha','brno','ostrava','plzeň','plzen','liberec','olomouc','budějovice','budejovice',
+    'hradec','usti','ústí','pardubice','zlín','zlin','havířov','havirov','kladno','most',
+    'opava','frýdek','frydek','karviná','karvina','jihlava','teplice','karlovy','vary',
+    'děčín','decin','chomutov','prostějov','prostejov','přerov','prerov','jablonec',
+    'ves','město','mesto','obec','vesnice','města','mesta','obce','české','ceske','moravské','moravske',
+
+    # Slova často mylně detekovaná jako příjmení (s i bez diakritiky)
+    'bytem','bydliště','bydliste','rodné','rodne','číslo','cislo',
+    'nový','novy','nová','nova','nové','nove','starý','stary','stará','stara','staré','stare'
 }
 
 ROLE_STOP = {
     'pronajímatel','nájemce','dlužník','věřitel','objednatel','zhotovitel',
     'zaměstnanec','zaměstnavatel','ručitel','spoludlužník','jednatel','svědek',
     'statutární','zástupce','pojistník','pojištěný','odesílatel','příjemce',
-    'elektřina','vodné','stočné','topení','internet','služba','služby'
+    'elektřina','vodné','stočné','topení','internet','služba','služby',
+
+    # Tituly a oslovení
+    'pan','paní','pán','slečna','pane','panem',
+    'ing','mgr','bc','mudr','judr','phdr','rndr','doc','prof','csc','ph','dr'
 }
 
 # =============== Inference nominativu ===============
@@ -622,7 +645,7 @@ EMAIL_RE   = re.compile(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}')
 DATE_RE    = re.compile(r'\b\d{1,2}\.\s*\d{1,2}\.\s*\d{4}\b')
 STATUTE_RE = re.compile(r'\b(Sb\.?|zákon(a|u)?|zákon\s*č\.)\b', re.IGNORECASE)
 PAIR_RE    = re.compile(r'(?<!\w)([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]{1,})\s+([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]{1,})(?!\w)')
-TITLES_RE  = re.compile(r'\b(Mgr|Ing|Dr|Ph\.?D|RNDr|MUDr|JUDr|PhDr|PaedDr|ThDr|RCDr|MVDr|DiS|Bc|BcA|MBA|LL\.?M|prof|doc)\.?\s+', re.IGNORECASE)
+TITLES_RE  = re.compile(r'\b(Mgr|Ing|Dr|Ph\.?D|RNDr|MUDr|JUDr|PhDr|PaedDr|ThDr|RCDr|MVDr|DiS|Bc|BcA|MBA|LL\.?M|prof|doc|pan|paní|pán|slečna)\.?\s+', re.IGNORECASE)
 
 CTX_OP     = re.compile(r'\b(OP|Číslo\s+OP|číslo\s+OP|občansk(ý|ého|ému|ém|ým)|průkaz|č\.\s*OP)\b', re.IGNORECASE)
 CTX_BIRTH  = re.compile(r'\b(rodn[ée]\s*č[íi]slo|RČ|rodn[ée])\b', re.IGNORECASE)

@@ -1,0 +1,60 @@
+================================================================================
+SOUHRN TESTOVÁNÍ ANONYMIZACE - VŠECHNY SMLOUVY
+================================================================================
+
+✅ SMLOUVA 2 (smlouva2.docx)
+   Osoby: 3
+   Status: FUNGUJE DOBŘE ✓
+   
+✅ SMLOUVA 3 (smlouva3.docx)
+   Osoby: 2
+   Status: FUNGUJE DOBŘE ✓
+
+✅ SMLOUVA 4 (smlouva4.docx)
+   Osoby: 7
+   Status: FUNGUJE DOBŘE ✓
+   Příklad sloučení pádů:
+   - "Petra Novotná" + "Petry Novotné" ✓
+   - "Veronika Suchá" + "Veronice Suché" ✓
+   - "Michal Říha" + "Michalu Říhovi" ✓
+
+✅ SMLOUVA 5 (smlouva5.docx)
+   Osoby: 12
+   Status: FUNGUJE DOBŘE ✓
+   Příklad sloučení pádů:
+   - "Alena Svobodová" + "Alenou Svobodovou" ✓
+   - "Helena Krátká" + "Helenou Krátkou" ✓
+
+✅ SMLOUVA 6 (smlouva6.docx)
+   Osoby: 4
+   Status: FUNGUJE DOBŘE ✓
+
+⚠️  SMLOUVA 0 (smlouva0.docx)
+   Osoby: 26 (příliš mnoho - obsahuje false positives)
+   Status: PROBLÉMY NALEZENY
+   
+   IDENTIFIKOVANÉ PROBLÉMY:
+   1. PERSON_16: "Škoda Octavia" - auto, NE osoba ❌
+   2. PERSON_14: "Pan Král" - "Pan" by nemělo být součástí jména ❌
+   3. PERSON_18: "Pan Pavel" - dtto ❌
+   4. PERSON_4: "Plzeň Rodné" - město, NE osoba ❌
+   5. PERSON_20: "Lan Bytem" - false positive ("bytem" je pád od "byt") ❌
+   6. PERSON_26: "Nová Ves" - název obce, NE osoba ❌
+
+================================================================================
+DOPORUČENÍ K OPRAVĚ:
+================================================================================
+
+1. Přidat do SURNAME_BLACKLIST:
+   - "octavia", "fabia", "rapid", "superb" (značky aut)
+   - "ves", "město", "plzeň", "praha", "brno" (geografické názvy)
+
+2. Vylepšit ROLE_STOP blacklist:
+   - "pan", "paní", "pán", "ing", "mgr" (tituly a oslovení)
+
+3. Přidat detekci vzorů:
+   - "[Značka auta] [Model]" - neoznačovat jako osobu
+   - "Pan [Jméno]" - odstranit "Pan" z detekce
+   - "[Město] [Něco]" - neoznačovat jako osobu
+
+================================================================================
