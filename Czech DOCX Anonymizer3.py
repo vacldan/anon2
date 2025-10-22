@@ -769,6 +769,7 @@ class Anonymizer:
                 self._ensure_person_tag(f_nom, l_nom)
 
     def _apply_known_people(self, text: str) -> str:
+        # FÁZE 1: Nahrazení plných jmen (křestní + příjmení)
         for p in self.canonical_persons:
             tag = self._ensure_person_tag(p['first'], p['last'])
             for pat in sorted(self.person_variants[tag], key=len, reverse=True):
@@ -778,7 +779,8 @@ class Anonymizer:
                     self._record_value(tag, surf)
                     return preserve_case(surf, tag)
                 text = rx.sub(repl, text)
-            
+
+            # FÁZE 2: Nahrazení přivlastňovacích přídavných jmen (Novákův, Janin)
             first_low, last_low = p['first'].lower(), p['last'].lower()
             poss = set()
             if first_low.endswith('a'):
@@ -797,6 +799,55 @@ class Anonymizer:
                     self._record_value(tag, surf)
                     return preserve_case(surf, tag)
                 text = rx.sub(repl2, text)
+
+        # FÁZE 3: Nahrazení samostatných příjmení (bez křestního jména)
+        # Příklad: "Horváthová pronajímá Procházkovi byt. Procházka platí Horváthové nájemné."
+        for p in self.canonical_persons:
+            tag = self._ensure_person_tag(p['first'], p['last'])
+
+            # Generuj všechny pádové varianty příjmení
+            surname_variants = variants_for_surname(p['last'])
+
+            # Také přidej varianty křestního jména pro kontrolu
+            first_variants = variants_for_first(p['first'])
+            # Normalizuj křestní jména pro kontrolu (lowercase pro case-insensitive matching)
+            first_variants_lower = {fv.lower() for fv in first_variants if fv}
+
+            for surname_var in sorted(surname_variants, key=len, reverse=True):
+                if not surname_var or len(surname_var) < 2:
+                    continue
+
+                # Jednoduchý regex pro nalezení příjmení jako samostatného slova
+                rx = re.compile(r'(?<!\w)' + re.escape(surname_var) + r'(?!\w)', re.IGNORECASE)
+
+                # Použijeme callback funkci, která zkontroluje kontext
+                def repl3_with_context(m):
+                    surf = m.group(0)
+                    start_pos = m.start()
+                    end_pos = m.end()
+
+                    # Zkontroluj 50 znaků před a 50 znaků po
+                    context_before = text[max(0, start_pos-50):start_pos]
+                    context_after = text[end_pos:min(len(text), end_pos+50)]
+
+                    # Extrahuj poslední slovo před a první slovo po
+                    words_before = re.findall(r'\b\w+\b', context_before)
+                    words_after = re.findall(r'\b\w+\b', context_after)
+
+                    # Pokud poslední slovo před příjmením je křestní jméno, NENAHRAZUJ
+                    if words_before and words_before[-1].lower() in first_variants_lower:
+                        return surf  # Nech to být (je to součást celého jména)
+
+                    # Pokud první slovo po příjmení je křestní jméno, NENAHRAZUJ
+                    if words_after and words_after[0].lower() in first_variants_lower:
+                        return surf  # Nech to být
+
+                    # Jinak je to samostatné příjmení → anonymizuj
+                    self._record_value(tag, surf)
+                    return preserve_case(surf, tag)
+
+                text = rx.sub(repl3_with_context, text)
+
         return text
 
     def _replace_remaining_people(self, text: str) -> str:

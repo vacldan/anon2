@@ -165,11 +165,13 @@
     "Tomáš Veselý"
   ],
   "[[PERSON_11]]": [
-    "Petra Beránková"
+    "Petra Beránková",
+    "Beránková"
   ],
   "[[PERSON_12]]": [
     "Růžena Holubová",
-    "Růženu Holubovou"
+    "Růženu Holubovou",
+    "Holubová"
   ],
   "[[PERSON_13]]": [
     "Pavel Beran",
@@ -180,7 +182,9 @@
   ],
   "[[PERSON_15]]": [
     "Petr Novotný",
-    "Petru Novotnému"
+    "Petru Novotnému",
+    "Novotnému",
+    "Novotný"
   ],
   "[[PERSON_17]]": [
     "Martin Novák",
@@ -193,25 +197,33 @@
     "Jana Svobodová"
   ],
   "[[PERSON_3]]": [
-    "Robert Krajíček"
+    "Robert Krajíček",
+    "Krajíček",
+    "Krajíčka"
   ],
   "[[PERSON_4]]": [
     "Mikhail Volkov",
-    "Mikhailovi Volkovovi"
+    "Mikhailovi Volkovovi",
+    "Volkov"
   ],
   "[[PERSON_6]]": [
     "Eva Horváthová",
+    "Horváthová",
+    "Horváthové",
     "Evě Horváthové"
   ],
   "[[PERSON_7]]": [
-    "Lukáš Procházka"
+    "Lukáš Procházka",
+    "Procházkovi",
+    "Procházka"
   ],
   "[[PERSON_8]]": [
     "Petrem Dvořákem"
   ],
   "[[PERSON_9]]": [
     "Kateřina Malá",
-    "Kateřinou Malou"
+    "Kateřinou Malou",
+    "Malou"
   ],
   "[[PHONE_10]]": [
     "+420 724 158 963"

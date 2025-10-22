@@ -2,26 +2,38 @@ OSOBY
 -----
 [[PERSON_10]]: Tomáš Veselý
 [[PERSON_11]]: Petra Beránková
+[[PERSON_11]]: Beránková
 [[PERSON_12]]: Růžena Holubová
 [[PERSON_12]]: Růženu Holubovou
+[[PERSON_12]]: Holubová
 [[PERSON_13]]: Pavel Beran
 [[PERSON_13]]: Pavlem Beranem
 [[PERSON_14]]: Jitkou Poláčkovou
 [[PERSON_15]]: Petr Novotný
 [[PERSON_15]]: Petru Novotnému
+[[PERSON_15]]: Novotnému
+[[PERSON_15]]: Novotný
 [[PERSON_17]]: Martin Novák
 [[PERSON_17]]: Novákova
 [[PERSON_1]]: Martinem Novákem
 [[PERSON_2]]: Jana Svobodová
 [[PERSON_3]]: Robert Krajíček
+[[PERSON_3]]: Krajíček
+[[PERSON_3]]: Krajíčka
 [[PERSON_4]]: Mikhail Volkov
 [[PERSON_4]]: Mikhailovi Volkovovi
+[[PERSON_4]]: Volkov
 [[PERSON_6]]: Eva Horváthová
+[[PERSON_6]]: Horváthová
+[[PERSON_6]]: Horváthové
 [[PERSON_6]]: Evě Horváthové
 [[PERSON_7]]: Lukáš Procházka
+[[PERSON_7]]: Procházkovi
+[[PERSON_7]]: Procházka
 [[PERSON_8]]: Petrem Dvořákem
 [[PERSON_9]]: Kateřina Malá
 [[PERSON_9]]: Kateřinou Malou
+[[PERSON_9]]: Malou
 
 RODNÁ ČÍSLA
 -----------
