@@ -55,22 +55,32 @@ def load_names_library(json_path: str = "cz_names.v1.json") -> Set[str]:
     try:
         script_dir = Path(__file__).parent if '__file__' in globals() else Path.cwd()
         json_file = script_dir / json_path
-        
+
         if not json_file.exists():
             print(f"⚠️  Varování: {json_path} nenalezen, používám prázdnou knihovnu!")
             return set()
-        
+
         with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        
+
         names = set()
+
+        # Načteme OBOJÍ - originální jména i normalizovaná
+        # Originální jména normalizujeme sami pro konzistenci
+        if 'firstnames' in data:
+            for name in data['firstnames'].get('M', []):
+                names.add(normalize_for_matching(name))
+            for name in data['firstnames'].get('F', []):
+                names.add(normalize_for_matching(name))
+
+        # Přidáme i předpřipravená normalizovaná jména (fallback)
         if 'firstnames_no_diac' in data:
             names.update(data['firstnames_no_diac'].get('M', []))
             names.update(data['firstnames_no_diac'].get('F', []))
-        
+
         print(f"✓ Načteno {len(names)} jmen z knihovny")
         return names
-        
+
     except Exception as e:
         print(f"⚠️  Chyba při načítání: {e}")
         return set()
@@ -98,140 +108,508 @@ ROLE_STOP = {
 
 # =============== Inference nominativu ===============
 def _male_genitive_to_nominative(obs: str) -> Optional[str]:
+    """Převede pozorovaný tvar (např. genitiv) na nominativ pro mužská jména."""
     lo = obs.lower()
     cands = []
+
+    # Dativ/Vokativ: -u → nominativ (Michalu → Michal, Petru → Petr)
+    # DŮLEŽITÉ: Testujeme to PŘED -a, protože Michalu má končit na -u, ne -a
+    if lo.endswith('u') and len(obs) > 1:
+        cands.append(obs[:-1])
+
+    # Dativ/Lokál: -ovi → nominativ (Petrovi → Petr)
+    if lo.endswith('ovi') and len(obs) > 3:
+        cands.append(obs[:-3])
+
+    # Instrumentál: -em → nominativ (Petrem → Petr)
+    if lo.endswith('em') and len(obs) > 2:
+        cands.append(obs[:-2])
+
+    # Speciální případy: -ka → -ek, -la → -el, -ca → -ec
     if lo.endswith('ka') and len(obs) > 2:
         cands.append(obs[:-2] + 'ek')
     if lo.endswith('la') and len(obs) > 2:
         cands.append(obs[:-2] + 'el')
+    if lo.endswith('ca') and len(obs) > 2:
+        cands.append(obs[:-2] + 'ec')
+
+    # Genitiv/Akuzativ: -a → nominativ (Petra → Petr)
+    # Testujeme až po -ka/-la/-ca, abychom správně zachytili speciální případy
     if lo.endswith('a') and len(obs) > 1:
         cands.append(obs[:-1])
+
+    # Vokativ/Lokál: -e → nominativ (u Pavle → Pavel)
+    if lo.endswith('e') and len(obs) > 1:
+        cands.append(obs[:-1])
+        # Možné měkčení zpět: Pavle → Pavel
+        if len(obs) > 2 and obs[-2:-1] in 'lc':
+            cands.append(obs[:-1] + 'el')
+
+    # Kontrola proti knihovně jmen
     for cand in cands:
         if normalize_for_matching(cand) in CZECH_FIRST_NAMES:
             return cand
     return None
 
 def infer_first_name_nominative(observed: str, surname_observed: str = "") -> Optional[str]:
+    """
+    Odvozuje nominativ křestního jména z pozorovaného tvaru (může být v jakémkoliv pádu).
+    Například: "Petra" → "Petr", "Janě" → "Jana", "Jiřího" → "Jiří"
+    """
     if not observed: return None
     obs = observed.strip()
     surname_lower = (surname_observed or "").lower()
     female_like_surname = surname_lower.endswith(('ová', 'á', 'ou', 'é'))
 
-    if not female_like_surname:
-        cand = _male_genitive_to_nominative(obs)
-        if cand: return cand
-
+    # Zkus nejdřív přímé matchování
     norm = normalize_for_matching(obs)
     if norm in CZECH_FIRST_NAMES:
         return obs
 
-    # Speciální pravidla pro -ice, -ře
-    if obs.lower().endswith('ice') and len(obs) > 3:
+    # Pokud příjmení nenaznačuje ženu, zkus mužská pravidla
+    if not female_like_surname:
+        cand = _male_genitive_to_nominative(obs)
+        if cand: return cand
+
+    # ========== Ženská jména ==========
+    low = obs.lower()
+
+    # Speciální případ: -ice → -ika nebo -a (Verunice → Veronika)
+    if low.endswith('ice') and len(obs) > 3:
         cand = obs[:-3] + 'ika'
         if normalize_for_matching(cand) in CZECH_FIRST_NAMES:
             return cand
         cand = obs[:-3] + 'a'
         if normalize_for_matching(cand) in CZECH_FIRST_NAMES:
             return cand
-    
-    if obs.lower().endswith('ře') and len(obs) > 2:
+
+    # Speciální případ: -ře → -ra (Petře → Petra)
+    if low.endswith('ře') and len(obs) > 2:
         cand = obs[:-2] + 'ra'
         if normalize_for_matching(cand) in CZECH_FIRST_NAMES:
             return cand
 
-    for suf in ['inou','iné','inu','iny','ou','u','y','e','ě','o']:
-        if obs.lower().endswith(suf) and len(obs) > len(suf)+1:
+    # Přivlastňovací tvary: -in/-ina/-iny/... → -a
+    for suf in ['inou','iným','iných','iné','inu','iny','ina','in']:
+        if low.endswith(suf) and len(obs) > len(suf)+1:
             cand = obs[:-len(suf)] + 'a'
             if normalize_for_matching(cand) in CZECH_FIRST_NAMES:
                 return cand
 
-    for suf in ['ovi','em','e','u']:
-        if obs.lower().endswith(suf) and len(obs) > len(suf)+1:
+    # Základní pády: -ou/-u/-y/-e/-ě/-o → -a
+    for suf in ['ou','u','y','e','ě','o']:
+        if low.endswith(suf) and len(obs) > len(suf)+1:
+            cand = obs[:-len(suf)] + 'a'
+            if normalize_for_matching(cand) in CZECH_FIRST_NAMES:
+                return cand
+
+    # ========== Mužská jména (alternativní cesta) ==========
+
+    # Přivlastňovací tvary: -ův/-ova/-ovo/-ových/... → základ
+    for suf in ['ových','ovou','ově','ovu','ova','ovo','ův']:
+        if low.endswith(suf) and len(obs) > len(suf)+1:
             cand = obs[:-len(suf)]
             if normalize_for_matching(cand) in CZECH_FIRST_NAMES:
                 return cand
+
+    # Základní pády mužských jmen
+    for suf in ['ovi','em','e','u','a']:
+        if low.endswith(suf) and len(obs) > len(suf)+1:
+            cand = obs[:-len(suf)]
+            if normalize_for_matching(cand) in CZECH_FIRST_NAMES:
+                return cand
+
+    # Speciální případ pro jména na -í (Jiří)
+    if low.endswith(('ího','ímu','ím','íh')):
+        for suf_len in [3, 3, 2, 2]:
+            if len(obs) > suf_len:
+                cand = obs[:-suf_len] + 'í'
+                if normalize_for_matching(cand) in CZECH_FIRST_NAMES:
+                    return cand
+
     return None
 
 def infer_surname_nominative(observed: str) -> str:
+    """
+    Odvozuje nominativ příjmení z pozorovaného tvaru.
+    Například: "Novákovi" → "Novák", "Novákovou" → "Nováková", "Novotného" → "Novotný"
+    """
     if not observed: return observed
     obs = observed.strip()
     low = obs.lower()
 
-    if low.endswith('ovou') and len(obs) > 4: return obs[:-4] + 'ová'
-    if low.endswith('ové') and len(obs) > 3:  return obs[:-3] + 'á'
-    if low.endswith('é') and len(obs) > 2:    return obs[:-1] + 'á'
-    if low.endswith('ou') and not low.endswith('ovou') and len(obs) > 2:
+    # ========== Ženská příjmení typu -ová ==========
+    if low.endswith('ovou') and len(obs) > 4:
+        return obs[:-4] + 'ová'  # Novákovou → Nováková
+    if low.endswith('ové') and len(obs) > 3:
+        # Může být gen/dat/lok Novákové, ale nominativ je Nováková
+        return obs[:-3] + 'ová'
+    if low.endswith('ou') and len(obs) > 2 and not low.endswith('ovou'):
+        # Instrumentál: Novákovou → Nováková (ale opatrně)
+        # Může být i příjmení typu Malou → Malá
+        if low.endswith('ovou'):  # už jsme ošetřili výše
+            return obs[:-4] + 'ová'
         return obs[:-2] + 'á'
 
-    m = re.match(r'^(.*)ček(a|ovi|em|u|e|y|ou|ům|ách)?$', obs, flags=re.IGNORECASE)
-    if m: return m.group(1) + 'ček'
-    
-    m2 = re.match(r'^(.*)nk(a|ovi|em|u|e|y|ou|ům|ách)?$', obs, flags=re.IGNORECASE)
-    if m2: return m2.group(1) + 'nek'
-    
-    if low.endswith(('ka','kovi','kem','ku','ke')) and len(obs) > 3:
-        return re.sub(r'k(ovi|em|u|e|a)?$', 'ek', obs, flags=re.IGNORECASE)
+    # ========== Přídavná jména typu -ský/-cký/-ný ==========
+    # Novotného → Novotný, Novotné → Novotná/Novotný
+    if low.endswith(('ského','ckého')):
+        return obs[:-3] + 'ý'  # Novotského → Novotný
+    if low.endswith(('ému','ských','ckých','ským','ckým')):
+        # Různé pády
+        suffix_map = {'ému': 'ý', 'ských': 'ý', 'ckých': 'cký', 'ským': 'ý', 'ckým': 'cký'}
+        for s, repl in suffix_map.items():
+            if low.endswith(s):
+                return obs[:-len(s)] + repl
+    if low.endswith('nou'):
+        # Instrumentál ženska forma: Novotnou → Novotná, Suchou → Suchá
+        return obs[:-3] + 'ná'
+    # Obecný test pro příjmení končící na '-é' (přídavná jména)
+    # Suché, Novotné, Malé, atd. → Suchá, Novotná, Malá
+    if low.endswith('é') and len(obs) > 1:
+        # Může být gen/dat/lok od ženské formy
+        # NEBO nominativ středního rodu (vzácné u příjmení)
+        # Pro příjmení předpokládáme ženský tvar
+        return obs[:-1] + 'á'
+    if low.endswith(('ým','ém')) and len(obs) > 2:
+        # Možná instrumentál/lokál -ým/-ém
+        return obs[:-1] + 'ý'
 
-    m3 = re.match(r'^(.*)c(e|i|em|ů|ích|ům|ech|emi|u|y)?$', obs, flags=re.IGNORECASE)
-    if m3: return m3.group(1) + 'ec'
+    # ========== Speciální případy pro příjmení typu -ček/-nek/-ek ==========
+    m = re.match(r'^(.+)ček(a|ovi|em|u|e|y|ou|ům|ách|ů)?$', obs, flags=re.IGNORECASE)
+    if m:
+        return m.group(1) + 'ček'
 
-    if low.endswith('ovi') and len(obs) > 4:  return obs[:-3] + 'a'
+    m2 = re.match(r'^(.+)n[eě]k(a|ovi|em|u|e|y|ou|ům|ách|ů)?$', obs, flags=re.IGNORECASE)
+    if m2:
+        return m2.group(1) + 'nek'
 
-    for suf in ('em','e','u','y'):
+    if low.endswith(('ka','kovi','kem','ku','ke','ků','kům')) and len(obs) > 3:
+        return re.sub(r'k(ovi|em|u|e|a|ů|ům)?$', 'ek', obs, flags=re.IGNORECASE)
+
+    # ========== Příjmení typu -ec (Němec) ==========
+    m3 = re.match(r'^(.+)c(e|i|em|ů|ích|ům|ech|emi|u|y)?$', obs, flags=re.IGNORECASE)
+    if m3:
+        return m3.group(1) + 'ec'
+
+    # ========== Příjmení na -a (Svoboda) ==========
+    if low.endswith('ovi') and len(obs) > 3:
+        # Svobodovi → Svoboda
+        base = obs[:-3]
+        # Ale pokud je to -ovi pro příjmení bez -a, pak → základ
+        # Zkusíme přidat -a
+        return base + 'a'
+
+    # Ostatní pády pro příjmení na -a
+    for suf in ['ou','e','u','y']:
         if low.endswith(suf) and len(obs) > len(suf)+1:
-            return obs[:-len(suf)] + 'a'
+            # Svobodou → Svoboda, Svobodě → Svoboda
+            candidate = obs[:-len(suf)] + 'a'
+            # Ale pozor: může to být i příjmení bez -a
+            # Pokud původní slovo končí na souhlásku, může to být Novák
+            return candidate
+
+    # ========== Obecná mužská příjmení (konsonantní kmeny) ==========
+    # Novák, Dvořák, Malý, atd.
+
+    # Dativ/Lokál: -ovi, Instrumentál: -em
+    if low.endswith('ovi') and len(obs) > 3:
+        return obs[:-3]  # Novákovi → Novák
+    if low.endswith('em') and len(obs) > 2:
+        return obs[:-2]  # Novákem → Novák
+
+    # Genitiv/Akuzativ: -a (ale POUZE pokud to není příjmení na -a v nominativu!)
+    # Problém: "Říha" je nominativ, ale končí na -a
+    # "Nováka" je genitiv od "Novák"
+    # Heuristika: Pokud celé slovo končí na typické vzory, je to nominativ
+    if low.endswith('a') and len(obs) > 2:
+        # Typické vzory pro příjmení v nominativu na -a:
+        # -ha, -la, -ra, -da, -ta, -na, -ka, -cha, -ma, -ba, -pa, -va, -za, -sa
+        # Příklady: Říha, Skála, Hora, Svoboda, Kučera
+        if low.endswith(('iha','íha','uha','ůha','eha','ěha','oha','aha','yha',
+                         'ila','íla','ula','ůla','ela','ěla','ola','ala','yla',
+                         'ira','íra','ura','ůra','era','ěra','ora','ara','yra',
+                         'ida','ída','uda','ůda','eda','ěda','oda','ada','yda',
+                         'ita','íta','uta','ůta','eta','ěta','ota','ata','yta',
+                         'ina','ína','una','ůna','ena','ěna','ona','ana','yna',
+                         'ika','íka','uka','ůka','eka','ěka','oka','aka','yka',
+                         'ima','íma','uma','ůma','ema','ěma','oma','ama','yma',
+                         'iba','íba','uba','ůba','eba','ěba','oba','aba','yba',
+                         'ipa','ípa','upa','ůpa','epa','ěpa','opa','apa','ypa',
+                         'iva','íva','uva','ůva','eva','ěva','ova','ava','yva',
+                         'iza','íza','uza','ůza','eza','ěza','oza','aza','yza',
+                         'isa','ísa','usa','ůsa','esa','ěsa','osa','asa','ysa')):
+            # Je to pravděpodobně nominativ
+            return obs
+        else:
+            # Jinak je to pravděpodobně genitiv → odebrat -a
+            return obs[:-1]
 
     return obs
 
 # =============== Varianty pro nahrazování ===============
 def variants_for_first(first: str) -> set:
+    """
+    Generuje všechny pádové varianty křestního jména včetně:
+    - Nominativ, Genitiv, Dativ, Akuzativ, Vokativ, Lokál, Instrumentál
+    - Přivlastňovací přídavná jména (Petrův, Janin, atd.)
+    """
     f = first.strip()
     if not f: return {''}
     V = {f, f.lower(), f.capitalize()}
     low = f.lower()
+
+    # ========== Ženská jména končící na -a ==========
     if low.endswith('a'):
         stem = f[:-1]
+        # Základní pády: Gen/Dat/Akuz/Vok/Lok/Instr
         V |= {stem+'y', stem+'e', stem+'ě', stem+'u', stem+'ou', stem+'o'}
-        V |= {stem+s for s in ['in','ina','iny','iné','inu','inou','iným','iných']}
+
+        # Přivlastňovací přídavná jména (Janin dům, Petřina kniha)
+        V |= {stem+s for s in ['in','ina','iny','iné','inu','inou','iným','iných','ino']}
+
+        # Speciální případy pro měkčení (Petra → Petře, Veronka → Verunce)
+        if stem.endswith('k'):
+            V.add(stem[:-1] + 'c' + 'e')  # Veronka → Verunce
+            V.add(stem[:-1] + 'c' + 'i')  # Veronka → Verunce (alt)
+
+        # Speciální měkčení tr → tř (Petra → Petřin)
         if stem.endswith('tr'):
-            V |= {stem[:-1]+'ř'+s for s in ['in','ina','iny','iné','inu','inou','iným','iných']}
+            soft_stem = stem[:-1] + 'ř'
+            V |= {soft_stem+s for s in ['in','ina','iny','iné','inu','inou','iným','iných','ino']}
+
+        # Speciální měkčení h → z, ch → š, k → c, r → ř
+        if stem.endswith('h'):
+            soft_stem = stem[:-1] + 'z'
+            V.add(soft_stem + 'e')
+            V.add(soft_stem + 'i')
+        if stem.endswith('ch'):
+            soft_stem = stem[:-2] + 'š'
+            V.add(soft_stem + 'e')
+            V.add(soft_stem + 'i')
+        if stem.endswith(('k', 'g')):
+            soft_stem = stem[:-1] + 'c'
+            V.add(soft_stem + 'e')
+            V.add(soft_stem + 'i')
+        if stem.endswith('r') and not stem.endswith('tr'):
+            soft_stem = stem[:-1] + 'ř'
+            V.add(soft_stem + 'e')
+            V.add(soft_stem + 'i')
+
+    # ========== Mužská jména ==========
     else:
+        # Základní pády
         V |= {f+'a', f+'ovi', f+'e', f+'em', f+'u', f+'om'}
-        V |= {f+'ův'} | {f+'ov'+s for s in ['a','o','y','ě','ým','ých']}
-        if low.endswith('ek'): V.add(f[:-2] + 'ka')
-        if low.endswith('el'): V.add(f[:-2] + 'la')
+
+        # Přivlastňovací přídavná jména (Petrův dům, Petrova kniha)
+        V |= {f+'ův', f+'ova', f+'ovo', f+'ovu', f+'ovou', f+'ově'}
+        V |= {f+'ov'+s for s in ['a','o','y','ě','ým','ých','ou','u','e']}
+
+        # Speciální případy pro zakončení -ek, -el
+        if low.endswith('ek'):
+            stem_k = f[:-2] + 'k'
+            V |= {stem_k+'a', stem_k+'ovi', stem_k+'em', stem_k+'u', stem_k+'e'}
+            V.add(f[:-2] + 'ka')  # Vladimírek → Vladimírka
+
+        if low.endswith('el'):
+            stem_l = f[:-2] + 'l'
+            V |= {stem_l+'a', stem_l+'ovi', stem_l+'em', stem_l+'u', stem_l+'e'}
+            V.add(f[:-2] + 'la')  # Pavel → Pavla
+
+        # Speciální případy pro zakončení -ec
+        if low.endswith('ec'):
+            stem_c = f[:-2] + 'c'
+            V |= {stem_c+'e', stem_c+'i', stem_c+'em', stem_c+'u'}
+
+        # Speciální případ: Jiří → Jiřího, Jiřímu, Jiřím, Jiřího
+        if low.endswith('í'):
+            stem = f[:-1]
+            V |= {stem+'ího', stem+'ímu', stem+'ím', stem+'íh'}
+
+        # Speciální případ: -iš/-aš → měkčení (Lukáš, Tomáš)
+        if low.endswith(('áš', 'iš')):
+            stem_base = f[:-1]
+            V |= {stem_base+'e', stem_base+'i', stem_base+'em', stem_base+'ovi'}
+
+        # Lokál s měkčením (Petr → o Petrovi, ale Pavel → o Pavlovi)
+        if not low.endswith(('i', 'í')):
+            V |= {f+'ovi', f+'e'}  # "o Petrovi", "u Petra"
+
+    # Přidání verzí bez diakritiky
     V |= {unicodedata.normalize('NFKD', v).encode('ascii','ignore').decode('ascii') for v in list(V)}
+
     return V
 
 def variants_for_surname(surname: str) -> set:
+    """
+    Generuje všechny pádové varianty příjmení včetně:
+    - Všechny pády jednotného i množného čísla
+    - Přivlastňovací přídavná jména (Novákův, Novákova)
+    - Speciální případy pro -ová, -ský, -ek, -ec, atd.
+    """
     s = surname.strip()
     if not s: return {''}
     out = {s, s.lower(), s.capitalize()}
     low = s.lower()
 
+    # ========== Příjmení typu -ová (ženská) ==========
     if low.endswith('ová'):
-        base = s[:-1]
-        out |= {s, base+'é', base+'ou'}
+        base = s[:-1]  # Novákov
+        out |= {
+            s,              # Nováková (nom)
+            base+'é',       # Novákové (gen/dat/lok)
+            base+'ou',      # Novákovou (instr)
+            base+'á',       # alternativa (nom)
+        }
+        # Množné číslo
+        base_stem = s[:-3]  # Novák
+        out |= {
+            base_stem+'ových',  # u Novákových (gen pl)
+            base_stem+'ovým',   # Novákovým (dat/instr pl)
+            base_stem+'ové',    # Novákové (nom pl)
+        }
         return out
-    if low.endswith(('ský','cký','ý')):
-        stem = s[:-1] if low.endswith('ý') else s[:-3]
-        out |= {stem+'ý', stem+'ého', stem+'ému', stem+'ým', stem+'ém', stem+'á', stem+'é', stem+'ou'}
+
+    # ========== Příjmení typu -ský/-cký (přídavná jména) ==========
+    if low.endswith(('ský','cký')):
+        stem = s[:-2]  # Novot
+        out |= {
+            stem+'ý',       # Novotný (nom m)
+            stem+'ého',     # Novotného (gen/akuz)
+            stem+'ému',     # Novotnému (dat)
+            stem+'ým',      # Novotným (instr)
+            stem+'ém',      # Novotném (lok)
+            stem+'á',       # Novotná (nom f)
+            stem+'é',       # Novotné (gen/dat/lok f)
+            stem+'ou',      # Novotnou (instr f)
+            stem+'ých',     # Novotných (gen pl)
+            stem+'ými',     # Novotnými (instr pl)
+            stem+'ým',      # Novotným (dat pl)
+        }
         return out
-    if low.endswith('á'):
-        stem = s[:-1]; out |= {s, stem+'é', stem+'ou'}; return out
+
+    # ========== Obecná přídavná jména končící na -ý ==========
+    if low.endswith('ý'):
+        stem = s[:-1]
+        out |= {
+            stem+'ý', stem+'ého', stem+'ému', stem+'ým', stem+'ém',
+            stem+'á', stem+'é', stem+'ou',
+            stem+'ých', stem+'ými'
+        }
+        return out
+
+    # ========== Ženská příjmení na -á (ne -ová) ==========
+    if low.endswith('á') and not low.endswith('ová'):
+        stem = s[:-1]
+        out |= {s, stem+'é', stem+'ou', stem+'á'}
+        return out
+
+    # ========== Příjmení typu -ek (Dvořáček, Hájek) ==========
     if low.endswith('ek') and len(s) >= 3:
         stem_k = s[:-2] + 'k'
-        out |= {s, stem_k+'a', stem_k+'ovi', stem_k+'em', stem_k+'u', stem_k+'e', stem_k+'y', stem_k+'ou'}
+        out |= {
+            s,              # Dvořáček (nom)
+            stem_k+'a',     # Dvořáčka (gen)
+            stem_k+'ovi',   # Dvořáčkovi (dat)
+            stem_k+'em',    # Dvořáčkem (instr)
+            stem_k+'u',     # Dvořáčku (vok/akuz)
+            stem_k+'e',     # Dvořáčku (lok)
+            stem_k+'y',     # alt
+            stem_k+'ou',    # alt
+        }
+        # Přivlastňovací
+        out |= {
+            stem_k+'ův', stem_k+'ova', stem_k+'ovo',
+            stem_k+'ovu', stem_k+'ovou', stem_k+'ově'
+        }
+        # Množné číslo
+        out |= {
+            stem_k+'ů',     # u Dvořáčků (gen pl)
+            stem_k+'ům',    # Dvořáčkům (dat pl)
+            stem_k+'y',     # Dvořáčky (akuz pl)
+        }
         return out
+
+    # ========== Příjmení typu -ec (Němec, Konec) ==========
     if low.endswith('ec') and len(s) >= 3:
         stem_c = s[:-2] + 'c'
-        out |= {s, stem_c+'e', stem_c+'i', stem_c+'em', stem_c+'ů', stem_c+'ům', stem_c+'ích', stem_c+'ech', stem_c+'emi', stem_c+'u', stem_c+'y'}
+        out |= {
+            s,              # Němec (nom)
+            stem_c+'e',     # Němce (gen/akuz)
+            stem_c+'i',     # Němci (dat/lok)
+            stem_c+'em',    # Němcem (instr)
+            stem_c+'u',     # alt
+            stem_c+'y',     # alt
+        }
+        # Množné číslo
+        out |= {
+            stem_c+'ů',     # Němců (gen pl)
+            stem_c+'ům',    # Němcům (dat pl)
+            stem_c+'ích',   # Němcích (lok pl)
+            stem_c+'ech',   # Němcech (alt lok pl)
+            stem_c+'emi',   # Němcemi (instr pl)
+        }
+        # Přivlastňovací
+        out |= {
+            stem_c+'ův', stem_c+'ova', stem_c+'ovo',
+            stem_c+'ovu', stem_c+'ovou', stem_c+'ově'
+        }
         return out
-    if low.endswith('a') and len(s) >= 2:
+
+    # ========== Příjmení na -a (mužská i ženská) ==========
+    if low.endswith('a') and len(s) >= 2 and not low.endswith('ová'):
         stem = s[:-1]
-        out |= {s, stem+'y', stem+'ovi', stem+'ou', stem+'u', stem+'e'}
+        out |= {
+            s,              # Svoboda (nom)
+            stem+'y',       # Svobody (gen)
+            stem+'ovi',     # Svobodovi (dat m)
+            stem+'ou',      # Svobodou (instr)
+            stem+'u',       # Svobodu (akuz)
+            stem+'e',       # Svobodě (lok)
+            stem+'o',       # vok
+        }
+        # Přivlastňovací
+        out |= {
+            stem+'ův', stem+'ova', stem+'ovo',
+            stem+'ovu', stem+'ovou', stem+'ově'
+        }
+        # Množné číslo
+        out |= {
+            stem+'ů',       # u Svobodů (gen pl)
+            stem+'ům',      # Svobodům (dat pl)
+            stem+'y',       # Svobody (akuz pl)
+        }
         return out
-    out |= {s+'a', s+'ovi', s+'e', s+'em', s+'u'}
+
+    # ========== Obecná mužská příjmení (konsonantní kmeny) ==========
+    # Novák, Dvořák, Malý, atd.
+    out |= {
+        s+'a',          # Nováka (gen)
+        s+'ovi',        # Novákovi (dat)
+        s+'e',          # Nováku (lok/vok)
+        s+'em',         # Novákem (instr)
+        s+'u',          # Nováku (alt)
+    }
+    # Přivlastňovací přídavná jména
+    out |= {
+        s+'ův', s+'ova', s+'ovo',
+        s+'ovu', s+'ovou', s+'ově'
+    }
+    out |= {
+        s+'ov'+suf for suf in ['a','o','y','ě','ým','ých','ou','u','e','i']
+    }
+    # Množné číslo
+    out |= {
+        s+'ů',          # u Nováků (gen pl)
+        s+'ům',         # Novákům (dat pl)
+        s+'y',          # Nováky (akuz pl)
+        s+'ích',        # Novácích (lok pl)
+        s+'ech',        # alt lok
+    }
+
+    # Přidání verzí bez diakritiky
+    out |= {unicodedata.normalize('NFKD', v).encode('ascii','ignore').decode('ascii') for v in list(out)}
+
     return out
 
 # =============== Regexy ===============
