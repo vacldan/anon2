@@ -57,8 +57,18 @@ def load_names_library(json_path: str = "cz_names.v1.json") -> Set[str]:
         json_file = script_dir / json_path
 
         if not json_file.exists():
-            print(f"⚠️  Varování: {json_path} nenalezen, používám prázdnou knihovnu!")
-            return set()
+            print(f"⚠️  VAROVÁNÍ: {json_path} nenalezen v {script_dir}")
+            print(f"⚠️  Kontroluji aktuální složku: {Path.cwd()}")
+            # Zkus také aktuální složku
+            json_file_cwd = Path.cwd() / json_path
+            if json_file_cwd.exists():
+                json_file = json_file_cwd
+                print(f"✓ Nalezen v aktuální složce")
+            else:
+                print(f"❌ Soubor {json_path} nebyl nalezen!")
+                print(f"   Zkopíruj ho do stejné složky jako skript nebo do aktuální složky.")
+                print(f"   Používám prázdnou knihovnu - detekce jmen bude omezená!")
+                return set()
 
         with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -1250,31 +1260,53 @@ def main():
     ap.add_argument("--names-json", default="cz_names.v1.json", help="Cesta k JSON knihovně jmen")
     args = ap.parse_args()
 
-    if args.names_json != "cz_names.v1.json":
-        global CZECH_FIRST_NAMES
-        CZECH_FIRST_NAMES = load_names_library(args.names_json)
+    try:
+        if args.names_json != "cz_names.v1.json":
+            global CZECH_FIRST_NAMES
+            CZECH_FIRST_NAMES = load_names_library(args.names_json)
 
-    path = Path(args.docx_path) if args.docx_path else Path(input("Přetáhni sem .docx soubor nebo napiš cestu: ").strip().strip('"'))
-    if not path.exists():
-        print("❌ Soubor nenalezen:", path)
-        return 2
-    
-    base = path.stem
-    out_docx = path.parent / f"{base}_anon.docx"
-    out_json = path.parent / f"{base}_map.json"
-    out_txt  = path.parent / f"{base}_map.txt"
-    
-    print(f"\n🔍 Zpracovávám: {path.name}")
-    a = Anonymizer(verbose=False)
-    a.anonymize_docx(str(path), str(out_docx), str(out_json), str(out_txt))
-    
-    print("\n✅ Výstupy:")
-    print(f" - {out_docx}")
-    print(f" - {out_json}")
-    print(f" - {out_txt}")
-    print(f"\n📊 Statistiky:")
-    print(f" - Nalezeno osob: {len(a.canonical_persons)}")
-    print(f" - Celkem tagů: {sum(a.counter.values())}")
+        path = Path(args.docx_path) if args.docx_path else Path(input("Přetáhni sem .docx soubor nebo napiš cestu: ").strip().strip('"'))
+        if not path.exists():
+            print("❌ Soubor nenalezen:", path)
+            input("\nStiskni Enter pro ukončení...")
+            return 2
+
+        base = path.stem
+        out_docx = path.parent / f"{base}_anon.docx"
+        out_json = path.parent / f"{base}_map.json"
+        out_txt  = path.parent / f"{base}_map.txt"
+
+        print(f"\n🔍 Zpracovávám: {path.name}")
+        a = Anonymizer(verbose=False)
+        a.anonymize_docx(str(path), str(out_docx), str(out_json), str(out_txt))
+
+        print("\n✅ Výstupy:")
+        print(f" - {out_docx}")
+        print(f" - {out_json}")
+        print(f" - {out_txt}")
+        print(f"\n📊 Statistiky:")
+        print(f" - Nalezeno osob: {len(a.canonical_persons)}")
+        print(f" - Celkem tagů: {sum(a.counter.values())}")
+
+        # Pauza na konci pouze pokud je interaktivní terminál
+        if sys.stdin.isatty():
+            input("\n✅ Hotovo! Stiskni Enter pro ukončení...")
+        return 0
+
+    except Exception as e:
+        print(f"\n❌ CHYBA: {e}")
+        print(f"\n📋 Detail chyby:")
+        import traceback
+        traceback.print_exc()
+        # Vždy pauza při chybě, aby uživatel viděl co se stalo
+        try:
+            input("\n⚠️  Stiskni Enter pro ukončení...")
+        except:
+            # Pokud input() selže, aspoň čekej 10 sekund
+            import time
+            print("\n⚠️  Zavírám za 10 sekund...")
+            time.sleep(10)
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main())
