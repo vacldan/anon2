@@ -1,8 +1,8 @@
 OSOBY
 -----
 [[PERSON_11]]: Eva Horváthová
-[[PERSON_11]]: Horváthové
 [[PERSON_11]]: Horváthová
+[[PERSON_11]]: Horváthové
 [[PERSON_11]]: Evě Horváthové
 [[PERSON_12]]: Lukáš Procházka
 [[PERSON_12]]: Procházkovi
