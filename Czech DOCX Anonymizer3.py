@@ -639,13 +639,17 @@ def variants_for_surname(surname: str) -> set:
 # Vylepšený ADDRESS_RE - zachytává jen čistou adresu (Ulice číslo, PSČ Město)
 # Zastaví se před: RČ, IČO, Tel, E-mail, OP, Datum, atd.
 # Podporuje i prefixy jako "trvale bytem", "bytem", atd.
+# A také narrativní adresy jako "v ulici Mánesova 87, Brno"
 ADDRESS_RE = re.compile(
     r'(?<!\[)'                                       # Ne po '['
+    r'(?:'
     r'(?:(?:trvale\s+)?bytem\s+|'                    # Volitelný prefix "trvale bytem" nebo "bytem"
     r'(?:trvalé\s+)?bydlišt[eě]\s*:\s*|'            # nebo "trvalé bydliště:"
     r'(?:sídlo(?:\s+podnikání)?|se\s+sídlem)\s*:\s*|'  # nebo "sídlo:" / "se sídlem:"
     r'(?:místo\s+podnikání)\s*:\s*|'                # nebo "místo podnikání:"
-    r'(?:adresa|trvalý\s+pobyt)\s*:\s*)?'           # nebo "adresa:" / "trvalý pobyt:"
+    r'(?:adresa|trvalý\s+pobyt)\s*:\s*|'           # nebo "adresa:" / "trvalý pobyt:"
+    r'(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)?'  # nebo "v ulici", "na adrese", "v domě"
+    r')'
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek ulice)
     r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (malá písmena a mezery)
     r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (např. 25 nebo 25/8)
@@ -670,6 +674,42 @@ DATE_RE    = re.compile(r'\b\d{1,2}\.\s*\d{1,2}\.\s*\d{4}\b')
 STATUTE_RE = re.compile(r'\b(Sb\.?|zákon(a|u)?|zákon\s*č\.)\b', re.IGNORECASE)
 PAIR_RE    = re.compile(r'(?<!\w)([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]{1,})\s+([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]{1,})(?!\w)')
 TITLES_RE  = re.compile(r'\b(Mgr|Ing|Dr|Ph\.?D|RNDr|MUDr|JUDr|PhDr|PaedDr|ThDr|RCDr|MVDr|DiS|Bc|BcA|MBA|LL\.?M|prof|doc|pan|paní|pán|slečna)\.?\s+', re.IGNORECASE)
+
+# IČO a DIČ
+ICO_RE     = re.compile(r'\bIČO\s*:?\s*(\d{8})\b', re.IGNORECASE)
+DIC_RE     = re.compile(r'\bDIČ\s*:?\s*(CZ\d{8,10})\b', re.IGNORECASE)
+
+# Osobní číslo zaměstnance
+EMP_ID_RE  = re.compile(r'\b(?:osobn[íi]\s+č[íi]slo(?:\s+zaměstnance)?|zaměstnaneck[éeě]\s+č[íi]slo)\s*:?\s*(\d+)\b', re.IGNORECASE)
+
+# Role-based jména (Jednatel: David Müller, Zaměstnanec: Nguyễn Thị Lan)
+# Zachytává: "Role: Jméno Příjmení" nebo "Role: Jméno1 Jméno2 Příjmení" nebo "Role: Jméno "Přezdívka" Příjmení"
+# Rozšířený Unicode rozsah pro vietnamská a jiná jména: \u00C0-\u024F (Latin Extended) + \u1E00-\u1EFF (Latin Extended Additional)
+# Zastaví se před klíčovými slovy jako "Bytem:", "Bydliště:", "IČO:", atd.
+ROLE_NAME_RE = re.compile(
+    r'\b(Prodávající|Kupující|Zaměstnavatel|Zaměstnanec|Zaměstnavatelka|Zaměstnankyně|'
+    r'Zhotovitel|Objednatel|Jednatel|Jednatelka|Makléř|Sv[eě]dek|'
+    r'Pronaj[íi]matel|N[aá]jemce|Dlužn[íi]k|V[eě]řitel|Ručitel|Spoludlužn[íi]k|'
+    r'Statut[aá]rn[íi]\s+z[aá]stupce)\s*:\s*'
+    r'(?:(?:Mgr|Ing|Dr|Ph\.?D|RNDr|MUDr|JUDr|PhDr|PaedDr|ThDr|RCDr|MVDr|DiS|Bc|BcA|MBA|LL\.?M|prof|doc|pan|paní|pán|slečna)\.?\s+)?'  # volitelné tituly
+    r'((?:[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽa-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]+\s+){0,2}[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽa-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]+)'  # Celé jméno (1-3 slova)
+    r'(?=\s+(?:Bytem|Bydlišt[eě]|Sídlo|IČO|DIČ|Rodn[éě]|RČ|Nar\.|Tel\.|Telefon|Kontakt|E-mail|e-mail|OP|Občansk|Číslo|Datum|$))',  # Zastaví se před klíčovými slovy
+    re.IGNORECASE | re.UNICODE
+)
+
+# Jména s přezdívkami (Martin "Marty" Král)
+NICKNAME_RE = re.compile(
+    r'(?<!\w)([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,20})\s+"([^"]{1,20})"\s+([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,20})(?!\w)',
+    re.UNICODE
+)
+
+# Multi-token foreign names (Nguyễn Thị Lan - dvě křestní jména + příjmení)
+MULTI_TOKEN_NAME_RE = re.compile(
+    r'(?<!\w)([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,15})\s+'
+    r'([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,15})\s+'
+    r'([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,15})(?!\w)',
+    re.UNICODE
+)
 
 CTX_OP     = re.compile(r'\b(OP|Číslo\s+OP|číslo\s+OP|občansk(ý|ého|ému|ém|ým)|průkaz|č\.\s*OP)\b', re.IGNORECASE)
 CTX_BIRTH  = re.compile(r'\b(rodn[ée]\s*č[íi]slo|RČ|rodn[ée])\b', re.IGNORECASE)
@@ -733,6 +773,66 @@ class Anonymizer:
         return tag
 
     def _extract_persons_to_index(self, text: str):
+        # FÁZE 0a: Detekce jmen po rolích (Jednatel: David Müller, Zaměstnanec: Nguyễn Thị Lan)
+        for m in ROLE_NAME_RE.finditer(text):
+            role = m.group(1)
+            full_name = m.group(2).strip()  # celé jméno (1-3 slova)
+
+            # Rozděl celé jméno na tokeny
+            name_tokens = full_name.split()
+
+            if len(name_tokens) == 1:
+                # Jen příjmení? (neobvyklé, ale možné)
+                f_nom = name_tokens[0]
+                l_nom = name_tokens[0]
+            elif len(name_tokens) == 2:
+                # Klasický vzor: Křestní Příjmení
+                f_nom = name_tokens[0]
+                l_nom = infer_surname_nominative(name_tokens[1])
+            else:
+                # Multi-token name (3+ slova): Nguyễn Thị Lan
+                # Poslední slovo je příjmení, zbytek je křestní jméno
+                f_nom = ' '.join(name_tokens[:-1])
+                l_nom = infer_surname_nominative(name_tokens[-1])
+
+            # Přidej do indexu
+            self._ensure_person_tag(f_nom, l_nom)
+
+        # FÁZE 0b: Detekce jmen s přezdívkami (Martin "Marty" Král)
+        for m in NICKNAME_RE.finditer(text):
+            first_name = m.group(1)
+            nickname = m.group(2)
+            surname = m.group(3)
+
+            f_nom = infer_first_name_nominative(first_name, surname) or first_name
+            l_nom = infer_surname_nominative(surname)
+
+            self._ensure_person_tag(f_nom, l_nom)
+
+        # FÁZE 0c: Detekce multi-token foreign names (Nguyễn Thị Lan)
+        for m in MULTI_TOKEN_NAME_RE.finditer(text):
+            token1 = m.group(1)
+            token2 = m.group(2)
+            token3 = m.group(3)
+
+            # Heuristika: Pokud jsou všechny 3 slova kapitalizována a mají Unicode znaky,
+            # pravděpodobně jde o: Jméno1 Jméno2 Příjmení
+            # Pro vietnamská jména: Nguyễn Thị Lan = Nguyễn (příjmení) Thị Lan (jména)
+            # Ale my budeme používat poslední jako příjmení pro konzistenci
+
+            # Zkontroluj, jestli to není součást už detekované osoby
+            if normalize_for_matching(token1) in CZECH_FIRST_NAMES:
+                # Klasický český vzor: Křestní Prostřední Příjmení
+                f_nom = token1
+                l_nom = token3
+            else:
+                # Foreign name pattern: zkombinuj první dvě jako jméno
+                f_nom = f"{token1} {token2}"
+                l_nom = token3
+
+            self._ensure_person_tag(f_nom, l_nom)
+
+        # FÁZE 1: Standardní dvojice (Křestní Příjmení)
         text_no_titles = TITLES_RE.sub('', text)
         for m in PAIR_RE.finditer(text_no_titles):
             s, e = m.span()
@@ -769,6 +869,80 @@ class Anonymizer:
                 self._ensure_person_tag(f_nom, l_nom)
 
     def _apply_known_people(self, text: str) -> str:
+        # FÁZE 0a: Nahrazení jmen po rolích (Jednatel: David Müller, Zaměstnanec: Nguyễn Thị Lan)
+        def role_name_repl(m):
+            role = m.group(1)
+            full_name = m.group(2).strip()
+
+            # Rozděl celé jméno na tokeny
+            name_tokens = full_name.split()
+
+            if len(name_tokens) == 1:
+                f_nom = name_tokens[0]
+                l_nom = name_tokens[0]
+            elif len(name_tokens) == 2:
+                f_nom = name_tokens[0]
+                l_nom = infer_surname_nominative(name_tokens[1])
+            else:
+                # Multi-token: poslední je příjmení
+                f_nom = ' '.join(name_tokens[:-1])
+                l_nom = infer_surname_nominative(name_tokens[-1])
+
+            # Najdi tag pro tuto osobu
+            key = (normalize_for_matching(f_nom), normalize_for_matching(l_nom))
+            if key in self.person_index:
+                tag = self.person_index[key]
+                self._record_value(tag, full_name)
+                return f"{role}: {preserve_case(full_name, tag)}"
+
+            return m.group(0)
+
+        text = ROLE_NAME_RE.sub(role_name_repl, text)
+
+        # FÁZE 0b: Nahrazení jmen s přezdívkami (Martin "Marty" Král)
+        def nickname_repl(m):
+            first_name = m.group(1)
+            nickname = m.group(2)
+            surname = m.group(3)
+
+            f_nom = infer_first_name_nominative(first_name, surname) or first_name
+            l_nom = infer_surname_nominative(surname)
+
+            key = (normalize_for_matching(f_nom), normalize_for_matching(l_nom))
+            if key in self.person_index:
+                tag = self.person_index[key]
+                full_match = m.group(0)
+                self._record_value(tag, full_match)
+                return preserve_case(full_match, tag)
+
+            return m.group(0)
+
+        text = NICKNAME_RE.sub(nickname_repl, text)
+
+        # FÁZE 0c: Nahrazení multi-token foreign names (Nguyễn Thị Lan)
+        def multi_token_repl(m):
+            token1 = m.group(1)
+            token2 = m.group(2)
+            token3 = m.group(3)
+
+            if normalize_for_matching(token1) in CZECH_FIRST_NAMES:
+                f_nom = token1
+                l_nom = token3
+            else:
+                f_nom = f"{token1} {token2}"
+                l_nom = token3
+
+            key = (normalize_for_matching(f_nom), normalize_for_matching(l_nom))
+            if key in self.person_index:
+                tag = self.person_index[key]
+                full_match = m.group(0)
+                self._record_value(tag, full_match)
+                return preserve_case(full_match, tag)
+
+            return m.group(0)
+
+        text = MULTI_TOKEN_NAME_RE.sub(multi_token_repl, text)
+
         # FÁZE 1: Nahrazení plných jmen (křestní + příjmení)
         for p in self.canonical_persons:
             tag = self._ensure_person_tag(p['first'], p['last'])
@@ -996,6 +1170,36 @@ class Anonymizer:
             return tag
         text = IDCARD_RE.sub(id_repl, text)
 
+        # IČO (Identifikační číslo organizace)
+        def ico_repl(m):
+            full_match = m.group(0)
+            ico_num = m.group(1)
+            tag = self._get_or_create_tag('ICO', ico_num)
+            self._record_value(tag, ico_num)
+            # Replace just the number, keep the label
+            return full_match.replace(ico_num, tag)
+        text = ICO_RE.sub(ico_repl, text)
+
+        # DIČ (Daňové identifikační číslo)
+        def dic_repl(m):
+            full_match = m.group(0)
+            dic_num = m.group(1)
+            tag = self._get_or_create_tag('DIC', dic_num)
+            self._record_value(tag, dic_num)
+            # Replace just the number, keep the label
+            return full_match.replace(dic_num, tag)
+        text = DIC_RE.sub(dic_repl, text)
+
+        # Osobní číslo zaměstnance
+        def emp_id_repl(m):
+            full_match = m.group(0)
+            emp_num = m.group(1)
+            tag = self._get_or_create_tag('EMP_ID', emp_num)
+            self._record_value(tag, emp_num)
+            # Replace just the number, keep the label
+            return full_match.replace(emp_num, tag)
+        text = EMP_ID_RE.sub(emp_id_repl, text)
+
         return text
 
     def post_merge_person_tags(self, doc: Document):
@@ -1069,6 +1273,9 @@ class Anonymizer:
             sections = [
                 ("OSOBY", "PERSON"),
                 ("RODNÁ ČÍSLA", "BIRTH_ID"),
+                ("IČO", "ICO"),
+                ("DIČ", "DIC"),
+                ("OSOBNÍ ČÍSLA ZAMĚSTNANCŮ", "EMP_ID"),
                 ("BANKOVNÍ ÚČTY", "BANK"),
                 ("TELEFONY", "PHONE"),
                 ("EMAILY", "EMAIL"),
