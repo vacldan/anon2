@@ -1,77 +1,57 @@
 OSOBY
 -----
-[[PERSON_10]]: Plzeň Rodné číslo
-[[PERSON_11]]: Místo
-[[PERSON_11]]: Mikhail Volkov Místo
-[[PERSON_11]]: Mikhail Volkov
-[[PERSON_11]]: Volkov
-[[PERSON_12]]: Mikhailovi Volkovovi částku
-[[PERSON_12]]: částku
-[[PERSON_13]]: Brno Číslo účtu
-[[PERSON_13]]: účtu
-[[PERSON_14]]: Hradec Králové Číslo
-[[PERSON_15]]: Makléř Tomáš Veselý
-[[PERSON_16]]: beran
-[[PERSON_16]]: Pan Pavel Beran
-[[PERSON_17]]: bytem
-[[PERSON_17]]: Bytem
-[[PERSON_19]]: Labem Rodné číslo
-[[PERSON_1]]: Robert Krajíček
-[[PERSON_1]]: Krajíček
-[[PERSON_1]]: Krajíčka
-[[PERSON_20]]: Adam Nový Petru
-[[PERSON_20]]: Adam Nový
-[[PERSON_20]]: Nová
-[[PERSON_20]]: Novému
-[[PERSON_20]]: Nový
-[[PERSON_21]]: Martinem Novákem
-[[PERSON_22]]: Jana Svobodová
-[[PERSON_22]]: Jana Svobodová Datum
-[[PERSON_22]]: Datum
-[[PERSON_25]]: Eva Horváthová
-[[PERSON_25]]: Horváthová
-[[PERSON_25]]: Horváthové
-[[PERSON_25]]: Evě Horváthové
-[[PERSON_26]]: Lukáš Procházka
-[[PERSON_26]]: Procházkovi
-[[PERSON_26]]: Procházka
-[[PERSON_27]]: Petrem Dvořákem
-[[PERSON_28]]: Kateřina Malá
-[[PERSON_28]]: Kateřinou Malou
-[[PERSON_28]]: Malou
-[[PERSON_29]]: Tomáš Veselý
-[[PERSON_2]]: David Müller
-[[PERSON_2]]: Müller
-[[PERSON_30]]: Petra Beránková
-[[PERSON_30]]: Beránková
-[[PERSON_31]]: Růžena Holubová
-[[PERSON_31]]: Růženu Holubovou
-[[PERSON_31]]: Holubová
-[[PERSON_32]]: Pavel Beran
-[[PERSON_32]]: Pavlem Beranem
-[[PERSON_33]]: Jitkou Poláčkovou
-[[PERSON_35]]: Martin Novák
-[[PERSON_35]]: Novákova
-[[PERSON_3]]: Nguyễn Thị Lan
-[[PERSON_3]]: lan
-[[PERSON_4]]: Petr Novotný
-[[PERSON_4]]: Novotnému
-[[PERSON_4]]: Novotný
-[[PERSON_6]]: Martin "Marty" Král
-[[PERSON_6]]: Král
-[[PERSON_8]]: Brno Rodné číslo
-[[PERSON_8]]: Číslo
-[[PERSON_8]]: číslo
-[[PERSON_9]]: Bydliště
+[[PERSON_11]]: Eva Horváthová
+[[PERSON_11]]: Horváthová
+[[PERSON_11]]: Horváthové
+[[PERSON_11]]: Evě Horváthové
+[[PERSON_12]]: Lukáš Procházka
+[[PERSON_12]]: Procházkovi
+[[PERSON_12]]: Procházka
+[[PERSON_13]]: Petrem Dvořákem
+[[PERSON_14]]: Kateřina Malá
+[[PERSON_14]]: Kateřinou Malou
+[[PERSON_14]]: Malou
+[[PERSON_15]]: Tomáš Veselý
+[[PERSON_16]]: Petra Beránková
+[[PERSON_16]]: Beránková
+[[PERSON_17]]: Růžena Holubová
+[[PERSON_17]]: Růženu Holubovou
+[[PERSON_17]]: Holubová
+[[PERSON_18]]: Pavel Beran
+[[PERSON_18]]: Pavlem Beranem
+[[PERSON_19]]: Jitkou Poláčkovou
+[[PERSON_1]]: David Müller
+[[PERSON_1]]: Müller
+[[PERSON_20]]: Martin Novák
+[[PERSON_20]]: Novákova
+[[PERSON_2]]: Nguyễn Thị Lan
+[[PERSON_2]]: lan
+[[PERSON_3]]: Petr Novotný
+[[PERSON_3]]: Petru Novotnému
+[[PERSON_3]]: Novotnému
+[[PERSON_3]]: Novotný
+[[PERSON_4]]: Adam Nový
+[[PERSON_4]]: Nová
+[[PERSON_4]]: Novému
+[[PERSON_4]]: Nový
+[[PERSON_5]]: Martin "Marty" Král
+[[PERSON_5]]: Král
+[[PERSON_6]]: Martinem Novákem
+[[PERSON_7]]: Jana Svobodová
+[[PERSON_8]]: Robert Krajíček
+[[PERSON_8]]: Krajíčka
+[[PERSON_8]]: Krajíček
+[[PERSON_9]]: Mikhail Volkov
+[[PERSON_9]]: Mikhailovi Volkovovi
+[[PERSON_9]]: Volkov
 
 RODNÁ ČÍSLA
 -----------
 [[BIRTH_ID_1]]: 781204/3365
 [[BIRTH_ID_2]]: 950724/1258
-[[BIRTH_ID_3]]: 855512/7896
-[[BIRTH_ID_4]]: 885423/6987
-[[BIRTH_ID_5]]: 720815/3698
-[[BIRTH_ID_6]]: 750610/2589
+[[BIRTH_ID_3]]: 885423/6987
+[[BIRTH_ID_4]]: 720815/3698
+[[BIRTH_ID_5]]: 750610/2589
 
 IČO
 ---
@@ -85,6 +65,10 @@ IČO
 DIČ
 ---
 [[DIC_1]]: CZ8706154785
+
+OSOBNÍ ČÍSLA ZAMĚSTNANCŮ
+------------------------
+[[EMP_ID_1]]: 4785
 
 BANKOVNÍ ÚČTY
 -------------
@@ -115,6 +99,7 @@ TELEFONY
 
 EMAILY
 ------
+[[EMAIL_10]]: adam.novy@email.com
 [[EMAIL_1]]: jana.svobodova@email.cz
 [[EMAIL_2]]: r.krajicek@centrum.cz
 [[EMAIL_3]]: horvathova.eva@seznam.cz
@@ -122,25 +107,26 @@ EMAILY
 [[EMAIL_5]]: katerina.mala@univerzita.cz
 [[EMAIL_6]]: berankovap@gmail.com
 [[EMAIL_7]]: ruzena.holubova@consulting.cz
-[[EMAIL_8]]: info@gastroplus.cz
-[[EMAIL_9]]: adam.novy@email.com
+[[EMAIL_8]]: pavel.beran@innovationlabs.cz
+[[EMAIL_9]]: info@gastroplus.cz
 
 OBČANSKÉ PRŮKAZY
 ----------------
-[[ID_CARD_10]]: GH 963258
-[[ID_CARD_11]]: 820515/3698
-[[ID_CARD_12]]: IJ 745896
-[[ID_CARD_13]]: 930228/1547
-[[ID_CARD_14]]: KL 852963
+[[ID_CARD_10]]: 960312/5874
+[[ID_CARD_11]]: GH 963258
+[[ID_CARD_12]]: 820515/3698
+[[ID_CARD_13]]: IJ 745896
+[[ID_CARD_14]]: 930228/1547
+[[ID_CARD_15]]: KL 852963
 [[ID_CARD_1]]: CZ28547896
 [[ID_CARD_2]]:  123456789
 [[ID_CARD_3]]: 925315/6847
 [[ID_CARD_4]]: 685805/4789
 [[ID_CARD_5]]: AB 456789
-[[ID_CARD_6]]: CD 789123
-[[ID_CARD_7]]: 790604/2541
-[[ID_CARD_8]]: EF 321654
-[[ID_CARD_9]]: 960312/5874
+[[ID_CARD_6]]: 855512/7896
+[[ID_CARD_7]]: CD 789123
+[[ID_CARD_8]]: 790604/2541
+[[ID_CARD_9]]: EF 321654
 
 DATA
 ----
@@ -159,6 +145,8 @@ DATA
 ADRESY
 ------
 [[ADDRESS_1]]: Kollárova 28, 602 00 Brno
-[[ADDRESS_2]]: Mánesova 87, 612 00 Brno
-[[ADDRESS_3]]: Jugoslávská 25, 613 00 Brno
+[[ADDRESS_2]]: U Svatého Ducha 5/142, 301 00 Plzeň
+[[ADDRESS_3]]: Mánesova 87, 612 00 Brno
+[[ADDRESS_4]]: Smetanova 45, 500 02 Hradec Králové
+[[ADDRESS_5]]: Jugoslávská 25, 613 00 Brno
 

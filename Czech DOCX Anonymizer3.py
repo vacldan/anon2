@@ -112,10 +112,12 @@ SURNAME_BLACKLIST = {
     'opava','frýdek','frydek','karviná','karvina','jihlava','teplice','karlovy','vary',
     'děčín','decin','chomutov','prostějov','prostejov','přerov','prerov','jablonec',
     'ves','město','mesto','obec','vesnice','města','mesta','obce','české','ceske','moravské','moravske',
+    'labem','králové','hradec králové',
 
     # Slova často mylně detekovaná jako příjmení (s i bez diakritiky)
-    'bytem','bydliště','bydliste','rodné','rodne','číslo','cislo',
-    'nový','novy','nová','nova','nové','nove','starý','stary','stará','stara','staré','stare'
+    'bytem','bydliště','bydliste','rodné','rodne','číslo','cislo','císlo','čislo',
+    'nový','novy','nová','nova','nové','nove','starý','stary','stará','stara','staré','stare',
+    'místo','misto','datum','účtu','uctu','částku','castku','petru'
 }
 
 ROLE_STOP = {
@@ -773,29 +775,42 @@ class Anonymizer:
         return tag
 
     def _extract_persons_to_index(self, text: str):
-        # FÁZE 0a: Detekce jmen po rolích (Jednatel: David Müller, Zaměstnanec: Nguyễn Thị Lan)
-        for m in ROLE_NAME_RE.finditer(text):
-            role = m.group(1)
-            full_name = m.group(2).strip()  # celé jméno (1-3 slova)
+        # FÁZE 0a: Konservativní detekce jmen po specifických rolích (Jednatel:, Zaměstnanec:, atd.)
+        # Podporuje 2-3 slovná jména (David Müller, Nguyễn Thị Lan)
+        simple_role_re = re.compile(
+            r'\b(Jednatel|Jednatelka|Zaměstnanec|Zaměstnankyně|Dlužn[íi]k|V[eě]řitel|Prodávající|Kupující)\s*:\s*'
+            r'([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,20})'  # První jméno
+            r'(?:\s+([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,20}))?'  # Volitelné prostřední jméno
+            r'\s+([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,20})'  # Příjmení (poslední slovo)
+            r'(?=\s+(?:Bytem|Bydlišt|Sídlo|E-mail|Tel|Kontakt|$))',  # Zastaví se před klíčovými slovy
+            re.IGNORECASE | re.UNICODE
+        )
 
-            # Rozděl celé jméno na tokeny
-            name_tokens = full_name.split()
+        for m in simple_role_re.finditer(text):
+            first_part = m.group(2)
+            middle_part = m.group(3)  # může být None
+            surname = m.group(4)
 
-            if len(name_tokens) == 1:
-                # Jen příjmení? (neobvyklé, ale možné)
-                f_nom = name_tokens[0]
-                l_nom = name_tokens[0]
-            elif len(name_tokens) == 2:
-                # Klasický vzor: Křestní Příjmení
-                f_nom = name_tokens[0]
-                l_nom = infer_surname_nominative(name_tokens[1])
+            # Pokud je prostřední jméno, zkombinuj ho s první částí
+            if middle_part:
+                f_nom = f"{first_part} {middle_part}"
             else:
-                # Multi-token name (3+ slova): Nguyễn Thị Lan
-                # Poslední slovo je příjmení, zbytek je křestní jméno
-                f_nom = ' '.join(name_tokens[:-1])
-                l_nom = infer_surname_nominative(name_tokens[-1])
+                f_nom = first_part
 
-            # Přidej do indexu
+            # Kontrola blacklistu - ale dovolíme "nový/nová" jako příjmení pokud jsou po roli
+            # (Adam Nový, Petra Nová jsou běžná jména i když "nový" je adjektivum)
+            surname_norm = normalize_for_matching(surname)
+            fname_norm = normalize_for_matching(f_nom)
+
+            # Skip common blacklisted words, but allow "novy/nova" as it's also a surname
+            if surname_norm in SURNAME_BLACKLIST and surname_norm not in ('novy', 'nova', 'nove'):
+                continue
+            if fname_norm in SURNAME_BLACKLIST and fname_norm not in ('novy', 'nova', 'nove'):
+                continue
+
+            f_nom_inferred = infer_first_name_nominative(first_part, surname) or f_nom
+            l_nom = infer_surname_nominative(surname)
+
             self._ensure_person_tag(f_nom, l_nom)
 
         # FÁZE 0b: Detekce jmen s přezdívkami (Martin "Marty" Král)
@@ -804,31 +819,14 @@ class Anonymizer:
             nickname = m.group(2)
             surname = m.group(3)
 
+            # Kontrola blacklistu
+            if normalize_for_matching(surname) in SURNAME_BLACKLIST:
+                continue
+            if normalize_for_matching(first_name) in SURNAME_BLACKLIST:
+                continue
+
             f_nom = infer_first_name_nominative(first_name, surname) or first_name
             l_nom = infer_surname_nominative(surname)
-
-            self._ensure_person_tag(f_nom, l_nom)
-
-        # FÁZE 0c: Detekce multi-token foreign names (Nguyễn Thị Lan)
-        for m in MULTI_TOKEN_NAME_RE.finditer(text):
-            token1 = m.group(1)
-            token2 = m.group(2)
-            token3 = m.group(3)
-
-            # Heuristika: Pokud jsou všechny 3 slova kapitalizována a mají Unicode znaky,
-            # pravděpodobně jde o: Jméno1 Jméno2 Příjmení
-            # Pro vietnamská jména: Nguyễn Thị Lan = Nguyễn (příjmení) Thị Lan (jména)
-            # Ale my budeme používat poslední jako příjmení pro konzistenci
-
-            # Zkontroluj, jestli to není součást už detekované osoby
-            if normalize_for_matching(token1) in CZECH_FIRST_NAMES:
-                # Klasický český vzor: Křestní Prostřední Příjmení
-                f_nom = token1
-                l_nom = token3
-            else:
-                # Foreign name pattern: zkombinuj první dvě jako jméno
-                f_nom = f"{token1} {token2}"
-                l_nom = token3
 
             self._ensure_person_tag(f_nom, l_nom)
 
@@ -869,41 +867,17 @@ class Anonymizer:
                 self._ensure_person_tag(f_nom, l_nom)
 
     def _apply_known_people(self, text: str) -> str:
-        # FÁZE 0a: Nahrazení jmen po rolích (Jednatel: David Müller, Zaměstnanec: Nguyễn Thị Lan)
-        def role_name_repl(m):
-            role = m.group(1)
-            full_name = m.group(2).strip()
-
-            # Rozděl celé jméno na tokeny
-            name_tokens = full_name.split()
-
-            if len(name_tokens) == 1:
-                f_nom = name_tokens[0]
-                l_nom = name_tokens[0]
-            elif len(name_tokens) == 2:
-                f_nom = name_tokens[0]
-                l_nom = infer_surname_nominative(name_tokens[1])
-            else:
-                # Multi-token: poslední je příjmení
-                f_nom = ' '.join(name_tokens[:-1])
-                l_nom = infer_surname_nominative(name_tokens[-1])
-
-            # Najdi tag pro tuto osobu
-            key = (normalize_for_matching(f_nom), normalize_for_matching(l_nom))
-            if key in self.person_index:
-                tag = self.person_index[key]
-                self._record_value(tag, full_name)
-                return f"{role}: {preserve_case(full_name, tag)}"
-
-            return m.group(0)
-
-        text = ROLE_NAME_RE.sub(role_name_repl, text)
-
         # FÁZE 0b: Nahrazení jmen s přezdívkami (Martin "Marty" Král)
         def nickname_repl(m):
             first_name = m.group(1)
             nickname = m.group(2)
             surname = m.group(3)
+
+            # Kontrola blacklistu
+            if normalize_for_matching(surname) in SURNAME_BLACKLIST:
+                return m.group(0)
+            if normalize_for_matching(first_name) in SURNAME_BLACKLIST:
+                return m.group(0)
 
             f_nom = infer_first_name_nominative(first_name, surname) or first_name
             l_nom = infer_surname_nominative(surname)
@@ -918,30 +892,6 @@ class Anonymizer:
             return m.group(0)
 
         text = NICKNAME_RE.sub(nickname_repl, text)
-
-        # FÁZE 0c: Nahrazení multi-token foreign names (Nguyễn Thị Lan)
-        def multi_token_repl(m):
-            token1 = m.group(1)
-            token2 = m.group(2)
-            token3 = m.group(3)
-
-            if normalize_for_matching(token1) in CZECH_FIRST_NAMES:
-                f_nom = token1
-                l_nom = token3
-            else:
-                f_nom = f"{token1} {token2}"
-                l_nom = token3
-
-            key = (normalize_for_matching(f_nom), normalize_for_matching(l_nom))
-            if key in self.person_index:
-                tag = self.person_index[key]
-                full_match = m.group(0)
-                self._record_value(tag, full_match)
-                return preserve_case(full_match, tag)
-
-            return m.group(0)
-
-        text = MULTI_TOKEN_NAME_RE.sub(multi_token_repl, text)
 
         # FÁZE 1: Nahrazení plných jmen (křestní + příjmení)
         for p in self.canonical_persons:
