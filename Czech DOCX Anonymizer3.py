@@ -648,33 +648,26 @@ def variants_for_surname(surname: str) -> set:
     return out
 
 # =============== Regexy ===============
-# Vylepšený ADDRESS_RE - zachytává jen čistou adresu (Ulice číslo, PSČ Město)
-# Zastaví se před: RČ, IČO, Tel, E-mail, OP, Datum, atd.
-# Podporuje i prefixy jako "trvale bytem", "bytem", atd.
-# A také narrativní adresy jako "v ulici Mánesova 87, Brno"
+# Vylepšený ADDRESS_RE - zachytává čistou adresu (Ulice číslo, PSČ Město)
+# Podporuje prefixy: "Sídlo:", "Bytem:", "v ulici", atd.
+# Nezachytí adresy které jsou součástí jmen (Nová, Novákova jako ulice vs. příjmení)
 ADDRESS_RE = re.compile(
     r'(?<!\[)'                                       # Ne po '['
     r'(?:'
-    r'(?:(?:trvale\s+)?bytem\s+|'                    # Volitelný prefix "trvale bytem" nebo "bytem"
+    r'(?:(?:trvale\s+)?bytem\s+|'                    # Prefix "trvale bytem" nebo "bytem"
     r'(?:trvalé\s+)?bydlišt[eě]\s*:\s*|'            # nebo "trvalé bydliště:"
     r'(?:sídlo(?:\s+podnikání)?|se\s+sídlem)\s*:\s*|'  # nebo "sídlo:" / "se sídlem:"
-    r'(?:místo\s+podnikání)\s*:\s*|'                # nebo "místo podnikání:"
+    r'(?:místo\s+(?:podnikání|výkonu\s+práce))\s*:\s*|'  # nebo "místo podnikání/výkonu práce:"
     r'(?:adresa|trvalý\s+pobyt)\s*:\s*|'           # nebo "adresa:" / "trvalý pobyt:"
-    r'(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)?'  # nebo "v ulici", "na adrese", "v domě"
+    r'(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)?'  # nebo "v ulici", "na adrese"
     r')'
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek ulice)
-    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (malá písmena a mezery)
-    r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (např. 25 nebo 25/8)
-    r',\s*'                                          # Čárka a mezery
-    r'\d{3}\s?\d{2}'                                 # PSČ (např. 612 00)
-    r'\s+'                                           # Mezera
+    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (2-50 znaků)
+    r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (25 nebo 25/8 nebo 2396/184)
+    r',\s*'                                          # Čárka
+    r'(?:\d{3}\s?\d{2}\s+)?'                         # PSČ je VOLITELNÉ! (612 00 nebo 61200)
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
-    r'[a-záčďéěíňóřšťúůýž\s]{1,40}?'                # Název města (včetně víc slovných - České Budějovice)
-    r'(?=\s*(?:RČ|Rodn[éě]|IČO|DIČ|Tel\.|Telefon|Kontakt|'  # Zastaví se před klíčovými slovy
-    r'E-mail|e-mail|OP[:)]|Občansk|Číslo\s+OP|'
-    r'Datum\s+naroz|Nar\.|'
-    r'Zastoupen|Jednatel|Zaměst|Prodáv|Kupuj|'
-    r'Pronaj|Nájemce|$))',                          # nebo konec řádku
+    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}',              # Název města (Praha 1, Brno, České Budějovice)
     re.UNICODE | re.IGNORECASE
 )
 ACCT_RE    = re.compile(r'\b(?:\d{1,6}-)?\d{2,10}/\d{4}\b')
@@ -1030,19 +1023,19 @@ class Anonymizer:
         return rx.sub(repl, text)
 
     def anonymize_entities(self, text: str) -> str:
-        text = self._replace_entity(text, EMAIL_RE, 'EMAIL')
-
+        # DŮLEŽITÉ: Adresy PRVNÍ! (před emaily a osobami)
+        # Jinak "Novákova 45" se detekuje jako jméno
         def addr_repl(m):
             v = m.group(0).strip()
 
             # Odstranění běžných prefixů adres (s dvojtečkou)
-            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+podnikání|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:\s*', '', v, flags=re.IGNORECASE)
+            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:\s*', '', v, flags=re.IGNORECASE)
 
             # Odstranění běžných prefixů adres (bez dvojtečky)
             v = re.sub(r'^(trvale\s+)?bytem\s+', '', v, flags=re.IGNORECASE)
 
             # Odstranění kontextových frází
-            v = re.sub(r'^.{0,30}?\b(na\s+adrese|v\s+domě|domu)\s+', '', v, flags=re.IGNORECASE)
+            v = re.sub(r'^.{0,30}?\b(na\s+adrese|v\s+domě|domu|v\s+ulic[ií])\s+', '', v, flags=re.IGNORECASE)
 
             # Odstranění závorek a všeho v nich
             v = re.sub(r'\s*\(.*?\)\s*', ' ', v, flags=re.IGNORECASE)
@@ -1059,6 +1052,7 @@ class Anonymizer:
             return tag
         text = ADDRESS_RE.sub(addr_repl, text)
 
+        text = self._replace_entity(text, EMAIL_RE, 'EMAIL')
         text = self._replace_entity(text, DATE_RE, 'DATE')
 
         def phone_repl(m):
@@ -1215,9 +1209,11 @@ class Anonymizer:
             if not raw.strip():
                 continue
             txt = clean_invisibles(raw)
-            txt = self._apply_known_people(txt)
-            txt = self._replace_remaining_people(txt)
-            txt = self.anonymize_entities(txt)
+            # DŮLEŽITÉ: Adresy MUSÍ být anonymizovány PŘED osobami!
+            # Jinak "Novákova 45" končí jako "[[PERSON]] 45"
+            txt = self.anonymize_entities(txt)  # Adresy, IČO, DIČ, telefony, emaily - PRVNÍ!
+            txt = self._apply_known_people(txt)  # Potom známé osoby
+            txt = self._replace_remaining_people(txt)  # Nakonec zbylé osoby
             if txt != raw:
                 set_text(p, txt)
 
