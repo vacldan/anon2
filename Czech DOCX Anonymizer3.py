@@ -661,26 +661,37 @@ def variants_for_surname(surname: str) -> set:
 # =============== Regexy ===============
 # Vylepšený ADDRESS_RE - zachytává čistou adresu (Ulice číslo, PSČ Město)
 # Podporuje prefixy: "Sídlo:", "Bytem:", "v ulici", atd.
-# Nezachytí adresy které jsou součástí jmen (Nová, Novákova jako ulice vs. příjmení)
-# Zastaví se před klíčovými slovy jako "IČO:", "DIČ:", "Zastoupená:", atd.
+# DŮLEŽITÉ: Adresa MUSÍ mít formát "Ulice číslo, Město" (čárka + město jsou povinné)
 ADDRESS_RE = re.compile(
     r'(?<!\[)'                                       # Ne po '['
     r'(?:'
-    r'(?:(?:trvale\s+)?bytem\s+|'                    # Prefix "trvale bytem" nebo "bytem"
+    r'(?:(?:trvale\s+)?bytem\s*:?\s*|'              # Prefix "bytem" nebo "Bytem:" (dvojtečka volitelná)
     r'(?:trvalé\s+)?bydlišt[eě]\s*:\s*|'            # nebo "trvalé bydliště:"
     r'(?:sídlo(?:\s+podnikání)?|se\s+sídlem)\s*:\s*|'  # nebo "sídlo:" / "se sídlem:"
-    r'(?:místo\s+(?:podnikání|výkonu\s+práce))\s*:\s*|'  # nebo "místo podnikání/výkonu práce:"
     r'(?:adresa|trvalý\s+pobyt)\s*:\s*|'           # nebo "adresa:" / "trvalý pobyt:"
     r'(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)?'  # nebo "v ulici", "na adrese"
     r')'
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek ulice)
-    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (2-50 znaků)
-    r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (25 nebo 25/8 nebo 2396/184)
-    r',\s*'                                          # Čárka
-    r'(?:\d{3}\s?\d{2}\s+)?'                         # PSČ je VOLITELNÉ! (612 00 nebo 61200)
+    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (2-50 znaků, non-greedy)
+    r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (25 nebo 25/8)
+    r',\s*'                                          # Čárka POVINNÁ
+    r'(?:\d{3}\s?\d{2}\s+)?'                         # PSČ volitelné (612 00)
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
-    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}?'              # Název města (Praha 1, Brno, České Budějovice)
-    r'(?=\s+(?:IČO|DIČ|Zastoupen[áý]|Jednatel|RČ|Rodn[éě]|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Datum|Číslo|$))',  # Zastaví se před klíčovými slovy
+    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}'               # Název města (greedy - zachytí "Praha 4")
+    r'(?=\s+(?:Nar\.|RČ|Rodn[éě]|IČO|DIČ|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Číslo|Datum|Zastoupen|Jednatel)|[,.]|\s*$)',  # Zastaví se před klíčovými slovy
+    re.UNICODE | re.IGNORECASE
+)
+
+# ADDRESS_REVERSE_RE - obrácený formát "Město, Ulice číslo" (pro texty jako "Praha 1, Washingtonova 1621/11")
+ADDRESS_REVERSE_RE = re.compile(
+    r'(?<!\[)'                                       # Ne po '['
+    r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
+    r'[a-záčďéěíňóřšťúůýž\s\d]{2,30}?'              # Název města (Praha 1, Brno)
+    r',\s+'                                          # Čárka a mezera
+    r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek ulice)
+    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice
+    r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (1621/11)
+    r'(?=[\s,.]|$)',                                 # Zastaví se před mezerou, čárkou, tečkou nebo koncem
     re.UNICODE | re.IGNORECASE
 )
 ACCT_RE    = re.compile(r'\b(?:\d{1,6}-)?\d{2,10}/\d{4}\b')
@@ -974,6 +985,12 @@ class Anonymizer:
                     words_before = re.findall(r'\b\w+\b', context_before)
                     words_after = re.findall(r'\b\w+\b', context_after)
 
+                    # Pokud poslední slovo je oslovení/titul (Paní, Pan, MUDr., atd.), IGNORUJ ho
+                    titles_and_salutations = {'pan', 'paní', 'pani', 'pana', 'panu', 'mudr', 'ing', 'mgr', 'judr', 'bc', 'doc', 'prof'}
+                    if words_before and words_before[-1].lower() in titles_and_salutations:
+                        # Odstraň titul ze seznamu slov před
+                        words_before = words_before[:-1]
+
                     # Pokud poslední slovo před příjmením je křestní jméno, NENAHRAZUJ
                     if words_before and words_before[-1].lower() in first_variants_lower:
                         return surf  # Nech to být (je to součást celého jména)
@@ -987,6 +1004,42 @@ class Anonymizer:
                     return preserve_case(surf, tag)
 
                 text = rx.sub(repl3_with_context, text)
+
+        # FÁZE 3b: Nahrazení slov z křestního jména (pro vietnamská/asijská jména kde je příjmení první)
+        # Například: "Paní Nguyễn" kde "Nguyễn" je technicky v 'first', ale je to příjmení
+        for p in self.canonical_persons:
+            tag = self._ensure_person_tag(p['first'], p['last'])
+
+            # Rozděl křestní jméno na slova (např. "Nguyễn Thị" -> ["Nguyễn", "Thị"])
+            first_words = p['first'].split()
+
+            # Pro každé slovo z křestního jména (kromě velmi krátkých)
+            for word in first_words:
+                if len(word) < 3:  # Přeskoč velmi krátká slova
+                    continue
+
+                # Pokud slovo vypadá jako příjmení (velké písmeno na začátku, delší než 3 znaky)
+                if word[0].isupper() and len(word) >= 3:
+                    rx = re.compile(r'(?<!\w)' + re.escape(word) + r'(?!\w)', re.IGNORECASE)
+
+                    def repl3b(m):
+                        surf = m.group(0)
+                        start_pos = m.start()
+
+                        # Zkontroluj kontext
+                        context_before = text[max(0, start_pos-50):start_pos]
+                        words_before = re.findall(r'\b\w+\b', context_before)
+
+                        # Pokud je před slovem "Paní/Pan" nebo jiný titul, anonymizuj
+                        titles = {'pan', 'paní', 'pani', 'pana', 'panu', 'panem', 'mudr', 'ing', 'mgr'}
+                        if words_before and words_before[-1].lower() in titles:
+                            self._record_value(tag, surf)
+                            return preserve_case(surf, tag)
+
+                        # Jinak nech to být
+                        return surf
+
+                    text = rx.sub(repl3b, text)
 
         return text
 
@@ -1063,7 +1116,12 @@ class Anonymizer:
             tag = self._get_or_create_tag('ADDRESS', v)
             self._record_value(tag, v)
             return tag
+
+        # Nejprve standardní formát "Ulice číslo, Město"
         text = ADDRESS_RE.sub(addr_repl, text)
+
+        # Pak obrácený formát "Město, Ulice číslo" (např. "Praha 1, Washingtonova 1621/11")
+        text = ADDRESS_REVERSE_RE.sub(addr_repl, text)
 
         text = self._replace_entity(text, EMAIL_RE, 'EMAIL')
         text = self._replace_entity(text, DATE_RE, 'DATE')
