@@ -1276,6 +1276,30 @@ def main():
         out_json = path.parent / f"{base}_map.json"
         out_txt  = path.parent / f"{base}_map.txt"
 
+        # Kontrola, zda výstupní soubory nejsou otevřené
+        # Pokud ano, vytvoř nový soubor s časovým razítkem
+        files_locked = False
+        for out_file in [out_docx, out_json, out_txt]:
+            if out_file.exists():
+                try:
+                    # Pokus se otevřít soubor pro zápis (testuje, zda není zamčený)
+                    with open(out_file, 'a'):
+                        pass
+                except PermissionError:
+                    files_locked = True
+                    break
+
+        if files_locked:
+            # Vytvoř nové názvy souborů s časovým razítkem
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            out_docx = path.parent / f"{base}_anon_{timestamp}.docx"
+            out_json = path.parent / f"{base}_map_{timestamp}.json"
+            out_txt  = path.parent / f"{base}_map_{timestamp}.txt"
+            print(f"\n⚠️  Výstupní soubory jsou otevřené v jiné aplikaci!")
+            print(f"   Vytvářím nové soubory s časovým razítkem: {timestamp}")
+            print()
+
         print(f"\n🔍 Zpracovávám: {path.name}")
         a = Anonymizer(verbose=False)
         a.anonymize_docx(str(path), str(out_docx), str(out_json), str(out_txt))
