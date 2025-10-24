@@ -319,8 +319,19 @@ def infer_surname_nominative(observed: str) -> str:
     if m2:
         return m2.group(1) + 'nek'
 
+    # DŮLEŽITÉ: Pouze pro příjmení typu -ek (Hájek, Čábelek), NE pro běžná příjmení+'kem' (Dvořákem)
+    # Kontrola: před 'k' musí být souhláska (ne samohláska)
     if low.endswith(('ka','kovi','kem','ku','ke','ků','kům')) and len(obs) > 3:
-        return re.sub(r'k(ovi|em|u|e|a|ů|ům)?$', 'ek', obs, flags=re.IGNORECASE)
+        # Zjisti, který suffix máme
+        for suff in ['kovi', 'kem', 'kům', 'ka', 'ku', 'ke', 'ků']:
+            if low.endswith(suff):
+                idx_before_k = -(len(suff) + 1)
+                if len(obs) >= abs(idx_before_k):
+                    char_before_k = obs[idx_before_k].lower()
+                    # Pouze pokud je před 'k' souhláska (příjmení typu Hájek)
+                    if char_before_k not in 'aáeéěiíoóuúůyý':
+                        return re.sub(r'k(ovi|em|u|e|a|ů|ům)?$', 'ek', obs, flags=re.IGNORECASE)
+                break
 
     # ========== Příjmení typu -ec (Němec) ==========
     m3 = re.match(r'^(.+)c(e|i|em|ů|ích|ům|ech|emi|u|y)?$', obs, flags=re.IGNORECASE)
@@ -651,6 +662,7 @@ def variants_for_surname(surname: str) -> set:
 # Vylepšený ADDRESS_RE - zachytává čistou adresu (Ulice číslo, PSČ Město)
 # Podporuje prefixy: "Sídlo:", "Bytem:", "v ulici", atd.
 # Nezachytí adresy které jsou součástí jmen (Nová, Novákova jako ulice vs. příjmení)
+# Zastaví se před klíčovými slovy jako "IČO:", "DIČ:", "Zastoupená:", atd.
 ADDRESS_RE = re.compile(
     r'(?<!\[)'                                       # Ne po '['
     r'(?:'
@@ -667,7 +679,8 @@ ADDRESS_RE = re.compile(
     r',\s*'                                          # Čárka
     r'(?:\d{3}\s?\d{2}\s+)?'                         # PSČ je VOLITELNÉ! (612 00 nebo 61200)
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
-    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}',              # Název města (Praha 1, Brno, České Budějovice)
+    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}?'              # Název města (Praha 1, Brno, České Budějovice)
+    r'(?=\s+(?:IČO|DIČ|Zastoupen[áý]|Jednatel|RČ|Rodn[éě]|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Datum|Číslo|$))',  # Zastaví se před klíčovými slovy
     re.UNICODE | re.IGNORECASE
 )
 ACCT_RE    = re.compile(r'\b(?:\d{1,6}-)?\d{2,10}/\d{4}\b')
