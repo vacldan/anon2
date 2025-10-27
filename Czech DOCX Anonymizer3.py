@@ -987,6 +987,13 @@ class Anonymizer:
                     start_pos = m.start()
                     end_pos = m.end()
 
+                    # DŮLEŽITÉ: Přeskoč příjmení uvnitř "(rozená Xxx)" nebo "(dříve Xxx)"
+                    # Toto zabraňuje kolizi tagů (např. "(rozená Nová)" nesloučí s "Adam Nový")
+                    context_before_wide = text[max(0, start_pos-30):start_pos]
+                    if re.search(r'\((?:rozená|roz\.?|dříve)\s+(?:[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]\w+\s+)?$', context_before_wide, re.IGNORECASE):
+                        # Příjmení je uvnitř "(rozená ...)" - přeskoč!
+                        return surf
+
                     # Zkontroluj 50 znaků před a 50 znaků po
                     context_before = text[max(0, start_pos-50):start_pos]
                     context_after = text[end_pos:min(len(text), end_pos+50)]
@@ -1050,6 +1057,107 @@ class Anonymizer:
                         return surf
 
                     text = rx.sub(repl3b, text)
+
+        # FÁZE 3.5: Speciální handler pro "(rozená Xxx)" / "(roz. Xxx)" / "(dříve Xxx)"
+        # DŮLEŽITÉ: Musí být PO FÁZÍ 3 (aby už byly samostatná příjmení nahrazená jako [[PERSON_*]])
+        # aby handler mohl najít předchozí [[PERSON_*]] tag ve větě
+        MAIDEN_NAME_RE = re.compile(
+            r'\((?:rozená|roz\.?|dříve)\s+(?:([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+)\s+)?([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+)\)',
+            re.IGNORECASE | re.UNICODE
+        )
+
+        def maiden_name_repl(m):
+            full_match = m.group(0)
+            s, e = m.span()
+            first_name = m.group(1)  # Může být None
+            maiden_surname = m.group(2)
+            keyword = m.group(0).split()[0][1:]  # Extrahuj "rozená" nebo "dříve" z "(rozená"
+
+            # Hledej předchozí PERSON tag ve větě (do 200 znaků zpět)
+            pre = text[max(0, s-200):s]
+            # Hledej nejbližší PERSON tag (pozpátku = od konce = nejbližší)
+            person_tags = list(re.finditer(r'\[\[PERSON_\d+\]\]', pre))
+
+            if person_tags:
+                person_tag = person_tags[-1].group(0)  # Poslední = nejbližší
+                # Přidej rodné jméno k hodnotám tohoto tagu
+                self._record_value(person_tag, full_match)
+
+                # Vytvoř anonymizovanou verzi se zachovaným klíčovým slovem
+                return f'({keyword} {person_tag})'  # "(rozená [[PERSON_X]])" nebo "(dříve [[PERSON_X]])"
+
+            # Pokud nenajdeme předchozí PERSON tag, nech to být
+            return full_match
+
+        text = MAIDEN_NAME_RE.sub(maiden_name_repl, text)
+
+        # FÁZE 3.7: Nahrazení samostatných křestních jmen (bez příjmení)
+        # Příklad: "Petra uhradí Martinovi částku" → "[[PERSON_16]] uhradí [[PERSON_5]] částku"
+        for p in self.canonical_persons:
+            tag = self._ensure_person_tag(p['first'], p['last'])
+
+            # Generuj všechny pádové varianty křestního jména
+            first_variants = variants_for_first(p['first'])
+
+            # Také přidej varianty příjmení pro kontrolu
+            surname_variants = variants_for_surname(p['last'])
+            surname_variants_lower = {sv.lower() for sv in surname_variants if sv}
+
+            for first_var in sorted(first_variants, key=len, reverse=True):
+                if not first_var or len(first_var) < 2:
+                    continue
+
+                # Regex pro nalezení křestního jména jako samostatného slova
+                rx = re.compile(r'(?<!\w)' + re.escape(first_var) + r'(?!\w)', re.IGNORECASE)
+
+                def repl_first_with_context(m):
+                    surf = m.group(0)
+                    start_pos = m.start()
+                    end_pos = m.end()
+
+                    # Zkontroluj kontext (50 znaků před a po)
+                    context_before = text[max(0, start_pos-50):start_pos]
+                    context_after = text[end_pos:min(len(text), end_pos+50)]
+
+                    # Extrahuj slova kolem
+                    words_before = re.findall(r'\b\w+\b', context_before)
+                    words_after = re.findall(r'\b\w+\b', context_after)
+
+                    # Pokud následuje nebo předchází příjmení této osoby, NENAHRAZUJ
+                    # (je to součást plného jména, bude nahrazeno v FÁZI 1)
+                    if words_after and words_after[0].lower() in surname_variants_lower:
+                        return surf  # Plné jméno
+                    if words_before and words_before[-1].lower() in surname_variants_lower:
+                        return surf  # Plné jméno
+
+                    # DŮLEŽITÉ: Pokud existuje v širším kontextu (200 znaků zpět) PERSON tag
+                    # který obsahuje toto křestní jméno, použij TEN tag místo tohoto!
+                    # Toto řeší problém disambiguation (Petra = Petr Novotný vs. Petra Beránková)
+                    wide_context = text[max(0, start_pos-200):start_pos]
+                    nearby_person_tags = list(re.finditer(r'\[\[PERSON_\d+\]\]', wide_context))
+
+                    if nearby_person_tags:
+                        # Najdi poslední (= nejbližší) PERSON tag
+                        nearest_tag = nearby_person_tags[-1].group(0)
+
+                        # Zkontroluj, jestli tento tag obsahuje variantu našeho křestního jména
+                        if nearest_tag in self.tag_map:
+                            for val in self.tag_map[nearest_tag]:
+                                # Extrahuj křestní jméno z hodnoty (první slovo)
+                                val_words = val.split()
+                                if val_words:
+                                    val_first = val_words[0]
+                                    # Pokud první slovo matchuje náš surf (case-insensitive)
+                                    if val_first.lower() == surf.lower():
+                                        # Použij nejbližší tag!
+                                        self._record_value(nearest_tag, surf)
+                                        return preserve_case(surf, nearest_tag)
+
+                    # Jinak je to samostatné křestní jméno → anonymizuj s tímto tageem
+                    self._record_value(tag, surf)
+                    return preserve_case(surf, tag)
+
+                text = rx.sub(repl_first_with_context, text)
 
         # FÁZE 4: Nahrazení samostatných přezdívek v textu (dále jen "Marty")
         # Propojíme je se známými osobami na základě přezdívky

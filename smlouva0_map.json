@@ -226,8 +226,8 @@
   ],
   "[[PERSON_11]]": [
     "Eva Horváthová",
-    "Horváthové",
     "Horváthová",
+    "Horváthové",
     "Evě Horváthové"
   ],
   "[[PERSON_12]]": [
@@ -249,7 +249,10 @@
   ],
   "[[PERSON_16]]": [
     "Petra Beránková",
-    "Beránková"
+    "(rozená Nová)",
+    "Beránková",
+    "(dříve Petra Nová)",
+    "Petra"
   ],
   "[[PERSON_17]]": [
     "Růžena Holubová",
@@ -279,13 +282,13 @@
   ],
   "[[PERSON_4]]": [
     "Adam Nový",
-    "Nová",
     "Novému",
     "Nový"
   ],
   "[[PERSON_5]]": [
     "Martin \"Marty\" Král",
     "Král",
+    "Martinovi",
     "(dále jen \"Marty\")"
   ],
   "[[PERSON_6]]": [

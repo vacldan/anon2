@@ -1,8 +1,8 @@
 OSOBY
 -----
 [[PERSON_11]]: Eva Horváthová
-[[PERSON_11]]: Horváthové
 [[PERSON_11]]: Horváthová
+[[PERSON_11]]: Horváthové
 [[PERSON_11]]: Evě Horváthové
 [[PERSON_12]]: Lukáš Procházka
 [[PERSON_12]]: Procházkovi
@@ -14,7 +14,10 @@ OSOBY
 [[PERSON_14]]: Malou
 [[PERSON_15]]: Tomáš Veselý
 [[PERSON_16]]: Petra Beránková
+[[PERSON_16]]: (rozená Nová)
 [[PERSON_16]]: Beránková
+[[PERSON_16]]: (dříve Petra Nová)
+[[PERSON_16]]: Petra
 [[PERSON_17]]: Růžena Holubová
 [[PERSON_17]]: Růženu Holubovou
 [[PERSON_17]]: Holubová
@@ -30,11 +33,11 @@ OSOBY
 [[PERSON_3]]: Novotnému
 [[PERSON_3]]: Novotný
 [[PERSON_4]]: Adam Nový
-[[PERSON_4]]: Nová
 [[PERSON_4]]: Novému
 [[PERSON_4]]: Nový
 [[PERSON_5]]: Martin "Marty" Král
 [[PERSON_5]]: Král
+[[PERSON_5]]: Martinovi
 [[PERSON_5]]: (dále jen "Marty")
 [[PERSON_6]]: Martin Novák
 [[PERSON_6]]: Martinem Novákem
