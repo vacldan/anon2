@@ -3,16 +3,16 @@
     "Vinohradská 2396/184, 130 00 Praha 3"
   ],
   "[[ADDRESS_11]]": [
-    "Bytem: Smetanova 45, 500 02 Hradec Králové Číslo"
+    "Bytem: Smetanova 45, 500 02 Hradec Králové"
   ],
   "[[ADDRESS_12]]": [
-    "Bytem: Na Výšinách 12, 148 00 Praha 4 Nar"
+    "Bytem: Na Výšinách 12, 148 00 Praha 4"
   ],
   "[[ADDRESS_13]]": [
     "Jugoslávská 25, 613 00 Brno"
   ],
   "[[ADDRESS_14]]": [
-    "Pod Pavlačí 7, 140 00 Praha 4 Rodné"
+    "Pod Pavlačí 7, 140 00 Praha 4"
   ],
   "[[ADDRESS_15]]": [
     "Janáčkovo nábřeží 13, 150 00 Praha 5"
@@ -21,13 +21,13 @@
     "Wenzigova 5, 120 00 Praha 2"
   ],
   "[[ADDRESS_17]]": [
-    "Bytem: Přívozní 1058/8, 170 00 Praha 7 Rodné"
+    "Bytem: Přívozní 1058/8, 170 00 Praha 7"
   ],
   "[[ADDRESS_18]]": [
     "Bytem: Nová 156, 252 19 Rudná u Prahy"
   ],
   "[[ADDRESS_19]]": [
-    "Novákova 45, 250 01 Brandýs nad Labem Rodné"
+    "Novákova 45, 250 01 Brandýs nad Labem"
   ],
   "[[ADDRESS_1]]": [
     "Washingtonova 1621/11, 110 00 Praha 1"
@@ -42,7 +42,7 @@
     "Místo výkonu práce Praha 1, Washingtonova 1621/11"
   ],
   "[[ADDRESS_4]]": [
-    "U Svatého Ducha 5/142, 301 00 Plzeň Rodné"
+    "U Svatého Ducha 5/142, 301 00 Plzeň"
   ],
   "[[ADDRESS_5]]": [
     "Belgická 1247/23, 120 00 Praha 2"
@@ -123,6 +123,9 @@
     "15.5.1975"
   ],
   "[[DIC_1]]": [
+    "CZ28547896"
+  ],
+  "[[DIC_2]]": [
     "CZ8706154785"
   ],
   "[[EMAIL_10]]": [
@@ -180,46 +183,43 @@
     "36985214"
   ],
   "[[ID_CARD_10]]": [
-    "GH 963258"
-  ],
-  "[[ID_CARD_11]]": [
     "820515/3698"
   ],
-  "[[ID_CARD_12]]": [
+  "[[ID_CARD_11]]": [
     "IJ 745896"
   ],
-  "[[ID_CARD_13]]": [
+  "[[ID_CARD_12]]": [
     "930228/1547"
   ],
-  "[[ID_CARD_14]]": [
+  "[[ID_CARD_13]]": [
     "KL 852963"
   ],
   "[[ID_CARD_1]]": [
-    "CZ28547896"
-  ],
-  "[[ID_CARD_2]]": [
     " 123456789"
   ],
-  "[[ID_CARD_3]]": [
+  "[[ID_CARD_2]]": [
     "925315/6847"
   ],
-  "[[ID_CARD_4]]": [
+  "[[ID_CARD_3]]": [
     "685805/4789"
   ],
-  "[[ID_CARD_5]]": [
+  "[[ID_CARD_4]]": [
     "855512/7896"
   ],
-  "[[ID_CARD_6]]": [
+  "[[ID_CARD_5]]": [
     "CD 789123"
   ],
-  "[[ID_CARD_7]]": [
+  "[[ID_CARD_6]]": [
     "790604/2541"
   ],
-  "[[ID_CARD_8]]": [
+  "[[ID_CARD_7]]": [
     "EF 321654"
   ],
-  "[[ID_CARD_9]]": [
+  "[[ID_CARD_8]]": [
     "960312/5874"
+  ],
+  "[[ID_CARD_9]]": [
+    "GH 963258"
   ],
   "[[PERSON_11]]": [
     "Eva Horváthová",
@@ -282,7 +282,8 @@
   ],
   "[[PERSON_5]]": [
     "Martin \"Marty\" Král",
-    "Král"
+    "Král",
+    "(dále jen \"Marty\")"
   ],
   "[[PERSON_6]]": [
     "Martin Novák",

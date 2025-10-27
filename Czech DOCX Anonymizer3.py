@@ -662,6 +662,7 @@ def variants_for_surname(surname: str) -> set:
 # Vylepšený ADDRESS_RE - zachytává čistou adresu (Ulice číslo, PSČ Město)
 # Podporuje prefixy: "Sídlo:", "Bytem:", "v ulici", atd.
 # DŮLEŽITÉ: Adresa MUSÍ mít formát "Ulice číslo, Město" (čárka + město jsou povinné)
+# VYLUČUJE: formát "Jméno Příjmení, bytem..." (to je osoba + adresa, ne jen adresa)
 ADDRESS_RE = re.compile(
     r'(?<!\[)'                                       # Ne po '['
     r'(?:'
@@ -671,14 +672,16 @@ ADDRESS_RE = re.compile(
     r'(?:adresa|trvalý\s+pobyt)\s*:\s*|'           # nebo "adresa:" / "trvalý pobyt:"
     r'(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)?'  # nebo "v ulici", "na adrese"
     r')'
+    r'(?![A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+,\s+bytem)'  # VYLUČUJE: "Jméno Příjmení, bytem"
+    r'(?![A-Z]{2,3}\s+\d{6,9})'                      # VYLUČUJE: "AB 456789" (OP kódy)
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek ulice)
     r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (2-50 znaků, non-greedy)
     r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (25 nebo 25/8)
     r',\s*'                                          # Čárka POVINNÁ
     r'(?:\d{3}\s?\d{2}\s+)?'                         # PSČ volitelné (612 00)
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
-    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}'               # Název města (greedy - zachytí "Praha 4")
-    r'(?=\s+(?:Nar\.|RČ|Rodn[éě]|IČO|DIČ|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Číslo|Datum|Zastoupen|Jednatel)|[,.]|\s*$)',  # Zastaví se před klíčovými slovy
+    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}?'              # Název města (non-greedy! - nezachytí "Číslo"/"Nar"/"Rodné")
+    r'(?=\s*(?:$|[,.\n]|(?:Nar\.|RČ|Rodn[éě]|IČO|DIČ|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Číslo|Datum|Zastoupen|Jednatel|vyd[aá]n)))',  # Zastaví se před klíčovými slovy
     re.UNICODE | re.IGNORECASE
 )
 
@@ -730,6 +733,12 @@ ROLE_NAME_RE = re.compile(
 NICKNAME_RE = re.compile(
     r'(?<!\w)([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,20})\s+"([^"]{1,20})"\s+([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ\u00C0-\u024F\u1E00-\u1EFF][a-záčďéěíňóřšťúůýž\u00C0-\u024F\u1E00-\u1EFF]{1,20})(?!\w)',
     re.UNICODE
+)
+
+# Samostatné přezdívky v textu (dále jen "Marty", "Marty", apod.)
+STANDALONE_NICKNAME_RE = re.compile(
+    r'\(dále\s+jen\s+"([^"]{1,20})"\)',
+    re.UNICODE | re.IGNORECASE
 )
 
 # Multi-token foreign names (Nguyễn Thị Lan - dvě křestní jména + příjmení)
@@ -1041,6 +1050,28 @@ class Anonymizer:
 
                     text = rx.sub(repl3b, text)
 
+        # FÁZE 4: Nahrazení samostatných přezdívek v textu (dále jen "Marty")
+        # Propojíme je se známými osobami na základě přezdívky
+        for p in self.canonical_persons:
+            tag = self._ensure_person_tag(p['first'], p['last'])
+
+            # Zkontroluj, zda osoba má přezdívku v hodnotách
+            nicknames = set()
+            for val in self.tag_map.get(tag, []):
+                # Hledej přezdívky ve formátu 'Name "Nickname" Surname'
+                nick_match = NICKNAME_RE.search(val)
+                if nick_match:
+                    nicknames.add(nick_match.group(2).lower())
+
+            # Anonymizuj standalone přezdívky
+            for nickname in nicknames:
+                # Pattern: (dále jen "nickname")
+                pattern = re.compile(r'\(dále\s+jen\s+"' + re.escape(nickname) + r'"\)', re.IGNORECASE)
+                def nickname_standalone_repl(m):
+                    self._record_value(tag, m.group(0))
+                    return f'(dále jen "{tag}")'
+                text = pattern.sub(nickname_standalone_repl, text)
+
         return text
 
     def _replace_remaining_people(self, text: str) -> str:
@@ -1171,29 +1202,8 @@ class Anonymizer:
             return raw
         text = ACCT_RE.sub(acct_like, text)
 
-        def birth_or_id_repl(m):
-            v = m.group(0)
-            s, e = m.span()
-            pre = text[max(0, s-40):s]
-            post = text[e:e+40]
-            
-            if CTX_OP.search(pre+post):
-                tag = self._get_or_create_tag('ID_CARD', v)
-            elif CTX_BIRTH.search(pre+post):
-                tag = self._get_or_create_tag('BIRTH_ID', v)
-            else:
-                tag = self._get_or_create_tag('BIRTH_ID', v)
-            
-            self._record_value(tag, v)
-            return tag
-        text = BIRTHID_RE.sub(birth_or_id_repl, text)
-
-        def id_repl(m):
-            v = m.group(0)
-            tag = self._get_or_create_tag('ID_CARD', v)
-            self._record_value(tag, v)
-            return tag
-        text = IDCARD_RE.sub(id_repl, text)
+        # DŮLEŽITÉ: IČO a DIČ PŘED IDCARD_RE!
+        # Jinak "CZ28547896" se detekuje jako ID_CARD místo DIČ
 
         # IČO (Identifikační číslo organizace)
         def ico_repl(m):
@@ -1214,6 +1224,33 @@ class Anonymizer:
             # Replace just the number, keep the label
             return full_match.replace(dic_num, tag)
         text = DIC_RE.sub(dic_repl, text)
+
+        def birth_or_id_repl(m):
+            v = m.group(0)
+            s, e = m.span()
+            pre = text[max(0, s-40):s]
+            post = text[e:e+40]
+
+            # Kontrola kontextu "r.č." nebo "(r.č." - pokud je tam, je to BIRTH_ID
+            if re.search(r'[\(\s]r\.?\s*č\.?\s*[:\)]?\s*$', pre, re.IGNORECASE):
+                tag = self._get_or_create_tag('BIRTH_ID', v)
+            elif CTX_OP.search(pre+post):
+                tag = self._get_or_create_tag('ID_CARD', v)
+            elif CTX_BIRTH.search(pre+post):
+                tag = self._get_or_create_tag('BIRTH_ID', v)
+            else:
+                tag = self._get_or_create_tag('BIRTH_ID', v)
+
+            self._record_value(tag, v)
+            return tag
+        text = BIRTHID_RE.sub(birth_or_id_repl, text)
+
+        def id_repl(m):
+            v = m.group(0)
+            tag = self._get_or_create_tag('ID_CARD', v)
+            self._record_value(tag, v)
+            return tag
+        text = IDCARD_RE.sub(id_repl, text)
 
         # Osobní číslo zaměstnance
         def emp_id_repl(m):
