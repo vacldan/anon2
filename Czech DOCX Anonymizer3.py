@@ -660,7 +660,7 @@ def variants_for_surname(surname: str) -> set:
 
 # =============== Regexy ===============
 # Vylepšený ADDRESS_RE - zachytává čistou adresu (Ulice číslo, PSČ Město)
-# Podporuje prefixy: "Sídlo:", "Bytem:", "v ulici", atd.
+# Podporuje prefixy: "Sídlo:", "Bytem:", "v ulici", "Místo podnikání:", atd.
 # DŮLEŽITÉ: Adresa MUSÍ mít formát "Ulice číslo, Město" (čárka + město jsou povinné)
 # VYLUČUJE: formát "Jméno Příjmení, bytem..." (to je osoba + adresa, ne jen adresa)
 ADDRESS_RE = re.compile(
@@ -669,6 +669,7 @@ ADDRESS_RE = re.compile(
     r'(?:(?:trvale\s+)?bytem\s*:?\s*)|'             # "bytem" nebo "Bytem:"
     r'(?:(?:trvalé\s+)?bydlišt[eě]\s*:\s*)|'        # "trvalé bydliště:"
     r'(?:(?:sídlo(?:\s+podnikání)?|se\s+sídlem)\s*:\s*)|'  # "sídlo:" / "se sídlem:"
+    r'(?:místo\s+podnikání\s*:\s*)|'                # "Místo podnikání:"
     r'(?:(?:adresa|trvalý\s+pobyt)\s*:\s*)|'       # "adresa:" / "trvalý pobyt:"
     r'(?:(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)'  # "v ulici " / "na adrese " (BEZ volitelnosti!)
     r')'
@@ -1120,10 +1121,63 @@ class Anonymizer:
         return rx.sub(repl, text)
 
     def anonymize_entities(self, text: str) -> str:
+        # SPECIÁLNÍ PŘÍPAD: "Jméno Příjmení, bytem Adresa" (např. v Svědcích)
+        # Musí být PŘED zpracováním adres a osob!
+        PERSON_BYTEM_ADDRESS_RE = re.compile(
+            r'(?<!\[)'
+            r'([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+(?:\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+)*)'  # Jméno (+ příjmení)
+            r',\s+'
+            r'(bytem\s+)'  # "bytem " (zachovat)
+            r'([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž\s]+\s+\d{1,4}(?:/\d{1,4})?)',  # Adresa bez města
+            re.IGNORECASE | re.UNICODE
+        )
+
+        def person_bytem_repl(m):
+            person_name = m.group(1).strip()
+            bytem_prefix = m.group(2)
+            address = m.group(3).strip()
+
+            # Rozděl jméno na křestní jméno a příjmení
+            name_parts = person_name.split()
+            if len(name_parts) >= 2:
+                first_name = name_parts[0]
+                last_name = ' '.join(name_parts[1:])
+            else:
+                first_name = person_name
+                last_name = person_name
+
+            # Vytvoř tagy
+            person_tag = self._ensure_person_tag(first_name, last_name)
+            self._record_value(person_tag, person_name)
+
+            address_tag = self._get_or_create_tag('ADDRESS', address)
+            self._record_value(address_tag, address)
+
+            return f'{person_tag}, {bytem_prefix}{address_tag}'
+
+        text = PERSON_BYTEM_ADDRESS_RE.sub(person_bytem_repl, text)
+
         # DŮLEŽITÉ: Adresy PRVNÍ! (před emaily a osobami)
         # Jinak "Novákova 45" se detekuje jako jméno
         def addr_repl(m):
-            v = m.group(0).strip()
+            full_match = m.group(0)
+            v = full_match.strip()
+            s, e = m.span()
+            pre = text[max(0, s-20):s]
+
+            # DŮLEŽITÉ: Pokud je před matchem "OP:", je to občanský průkaz, ne adresa!
+            # Např: "OP: AB 456789, vydán 12" by se jinak detekoval jako adresa
+            if re.search(r'\bOP\s*:\s*$', pre, re.IGNORECASE):
+                return full_match  # Neanonymizuj, nechej pro IDCARD_RE
+
+            # DŮLEŽITÉ: Pokud match obsahuje ", bytem", může to být "Jméno Příjmení, bytem Adresa"
+            # Např: "Martin Novák, bytem Nová Ves 78" by se jinak detekoval jako adresa
+            if re.search(r',\s+bytem\s+', v, re.IGNORECASE):
+                return full_match  # Neanonymizuj, nechej pro separátní zpracování jména a adresy
+
+            # Zachytit prefix PŘED odstraněním (pro zachování v textu)
+            prefix_match = re.match(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:\s*', v, flags=re.IGNORECASE)
+            prefix = prefix_match.group(0) if prefix_match else ''
 
             # Odstranění běžných prefixů adres (s dvojtečkou)
             v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:\s*', '', v, flags=re.IGNORECASE)
@@ -1143,10 +1197,11 @@ class Anonymizer:
             v = v.strip()
 
             if not v:
-                return m.group(0)
+                return full_match
             tag = self._get_or_create_tag('ADDRESS', v)
             self._record_value(tag, v)
-            return tag
+            # Vrátit prefix + tag (zachování kontextu)
+            return prefix + tag
 
         # Nejprve standardní formát "Ulice číslo, Město"
         text = ADDRESS_RE.sub(addr_repl, text)
@@ -1237,13 +1292,19 @@ class Anonymizer:
             pre = text[max(0, s-40):s]
             post = text[e:e+40]
 
-            # Kontrola kontextu "r.č." nebo "(r.č." - pokud je tam, je to BIRTH_ID
+            # DŮLEŽITÉ: Kontroluj CTX_BIRTH PŘED CTX_OP!
+            # "Rodné číslo: 925315/6847 Číslo OP: 123" by jinak bylo ID_CARD kvůli "OP"
+
+            # 1. Kontrola kontextu "r.č." nebo "(r.č." - pokud je tam, je to BIRTH_ID
             if re.search(r'[\(\s]r\.?\s*č\.?\s*[:\)]?\s*$', pre, re.IGNORECASE):
                 tag = self._get_or_create_tag('BIRTH_ID', v)
+            # 2. Kontrola "Rodné číslo:" PŘED číslem
+            elif CTX_BIRTH.search(pre):
+                tag = self._get_or_create_tag('BIRTH_ID', v)
+            # 3. Teprve pak kontroluj OP kontext
             elif CTX_OP.search(pre+post):
                 tag = self._get_or_create_tag('ID_CARD', v)
-            elif CTX_BIRTH.search(pre+post):
-                tag = self._get_or_create_tag('BIRTH_ID', v)
+            # 4. Default je BIRTH_ID (formát 6/3-4 je nejčastěji RČ)
             else:
                 tag = self._get_or_create_tag('BIRTH_ID', v)
 
@@ -1253,6 +1314,21 @@ class Anonymizer:
 
         def id_repl(m):
             v = m.group(0)
+            s, e = m.span()
+
+            # DŮLEŽITÉ: Pokud je to RČ formát (6 číslic / 3-4 číslice)
+            # a v kontextu je "Rodné číslo", je to BIRTH_ID, ne ID_CARD
+            if re.match(r'\d{6}/\d{3,4}$', v):
+                pre = text[max(0, s-40):s]
+                post = text[e:e+40]
+
+                # Pokud je v kontextu zmínka o rodném čísle
+                if CTX_BIRTH.search(pre+post) or re.search(r'Rodn[éě]\s+č[íi]slo', pre+post, re.IGNORECASE):
+                    tag = self._get_or_create_tag('BIRTH_ID', v)
+                    self._record_value(tag, v)
+                    return tag
+
+            # Jinak je to ID_CARD (občanský průkaz)
             tag = self._get_or_create_tag('ID_CARD', v)
             self._record_value(tag, v)
             return tag
