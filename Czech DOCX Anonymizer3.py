@@ -665,12 +665,12 @@ def variants_for_surname(surname: str) -> set:
 # VYLUČUJE: formát "Jméno Příjmení, bytem..." (to je osoba + adresa, ne jen adresa)
 ADDRESS_RE = re.compile(
     r'(?<!\[)'                                       # Ne po '['
-    r'(?:'
-    r'(?:(?:trvale\s+)?bytem\s*:?\s*|'              # Prefix "bytem" nebo "Bytem:" (dvojtečka volitelná)
-    r'(?:trvalé\s+)?bydlišt[eě]\s*:\s*|'            # nebo "trvalé bydliště:"
-    r'(?:sídlo(?:\s+podnikání)?|se\s+sídlem)\s*:\s*|'  # nebo "sídlo:" / "se sídlem:"
-    r'(?:adresa|trvalý\s+pobyt)\s*:\s*|'           # nebo "adresa:" / "trvalý pobyt:"
-    r'(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)?'  # nebo "v ulici", "na adrese"
+    r'(?:'                                           # Začátek prefixů
+    r'(?:(?:trvale\s+)?bytem\s*:?\s*)|'             # "bytem" nebo "Bytem:"
+    r'(?:(?:trvalé\s+)?bydlišt[eě]\s*:\s*)|'        # "trvalé bydliště:"
+    r'(?:(?:sídlo(?:\s+podnikání)?|se\s+sídlem)\s*:\s*)|'  # "sídlo:" / "se sídlem:"
+    r'(?:(?:adresa|trvalý\s+pobyt)\s*:\s*)|'       # "adresa:" / "trvalý pobyt:"
+    r'(?:(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)'  # "v ulici " / "na adrese " (BEZ volitelnosti!)
     r')'
     r'(?![A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+,\s+bytem)'  # VYLUČUJE: "Jméno Příjmení, bytem"
     r'(?![A-Z]{2,3}\s+\d{6,9})'                      # VYLUČUJE: "AB 456789" (OP kódy)
@@ -750,7 +750,7 @@ MULTI_TOKEN_NAME_RE = re.compile(
 )
 
 CTX_OP     = re.compile(r'\b(OP|Číslo\s+OP|číslo\s+OP|občansk(ý|ého|ému|ém|ým)|průkaz|č\.\s*OP)\b', re.IGNORECASE)
-CTX_BIRTH  = re.compile(r'\b(rodn[ée]\s*č[íi]slo|RČ|rodn[ée])\b', re.IGNORECASE)
+CTX_BIRTH  = re.compile(r'\b(rodn[ée]\s*č[íi]slo|r\.?\s*č\.?|RČ|rodn[ée])\b', re.IGNORECASE)
 CTX_BANK   = re.compile(r'\b(účet|účtu|účtem|Bankovní\s+účet|bankovní\s+účet|veden[eya].*u|banka|banky|IBAN|číslo\s+účtu)\b', re.IGNORECASE)
 CTX_PERSON = re.compile(
     r'(nar\.|narozen|rodn[ée]\s*č[íi]slo|RČ|bytem|trval[é]\s*bydlišt[ěi]|'
@@ -1177,19 +1177,25 @@ class Anonymizer:
             if self._is_statute(text, s, e):
                 return m.group(0)
             raw = m.group(0)
-            
+
+            pre = text[max(0, s-30):s]
+            post = text[e:e+30]
+
+            # DŮLEŽITÉ: Pokud je to RČ (rodné číslo), NEANONYMIZUJ zde
+            # Nech to pro BIRTHID_RE který běží později
+            if CTX_BIRTH.search(pre+post):
+                return raw  # Vrátit bez změny, bude zpracováno jako BIRTH_ID
+
             parts = raw.split('/')
             if len(parts) == 2:
                 main_part = parts[0].replace('-', '')
                 bank_code = parts[1]
-                
+
                 if len(main_part) >= 7 and len(bank_code) == 4:
                     tag = self._get_or_create_tag('BANK', raw)
                     self._record_value(tag, raw)
                     return tag
-            
-            pre = text[max(0, s-30):s]
-            post = text[e:e+30]
+
             if CTX_BANK.search(pre+post):
                 tag = self._get_or_create_tag('BANK', raw)
                 self._record_value(tag, raw)
@@ -1198,7 +1204,7 @@ class Anonymizer:
                 tag = self._get_or_create_tag('ID_CARD', raw)
                 self._record_value(tag, raw)
                 return tag
-            
+
             return raw
         text = ACCT_RE.sub(acct_like, text)
 
