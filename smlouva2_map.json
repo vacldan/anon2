@@ -1,10 +1,4 @@
 {
-  "[[ADDRESS_1]]": [
-    "Čechova 14, 750 02 Přerov"
-  ],
-  "[[ADDRESS_2]]": [
-    "Kapucínská 8, 602 00 Brno"
-  ],
   "[[BANK_1]]": [
     "210123456/2010"
   ],
@@ -46,6 +40,13 @@
   ],
   "[[EMAIL_2]]": [
     "lucie.d@example.cz"
+  ],
+  "[[PERSON_1]]": [
+    "Stav",
+    "stavu",
+    "položku",
+    "stavy",
+    "položky"
   ],
   "[[PERSON_2]]": [
     "Tomáš Konečný"

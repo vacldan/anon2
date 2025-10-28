@@ -15,6 +15,10 @@ OSOBY
 [[PERSON_9]]: Alena Svobodová
 [[PERSON_9]]: Alenou Svobodovou
 
+BIC/SWIFT
+---------
+[[BIC_1]]: SYNERGIE
+
 DATA
 ----
 [[DATE_10]]: 25. 11. 1994

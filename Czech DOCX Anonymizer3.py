@@ -687,8 +687,19 @@ ADDRESS_RE = re.compile(
 )
 
 # ADDRESS_REVERSE_RE - obrácený formát "Město, Ulice číslo" (pro texty jako "Praha 1, Washingtonova 1621/11")
+# KRITICKÁ OPRAVA: Vyžaduje adresní prefix (jako ADDRESS_RE), aby se zabránilo false positive matchům
+# Příklad false positive BEZ prefixu: "Dlužník potvrzuje, že uvedenou částku převzal v hotovosti dne 31"
+#   → tento text by byl chybně detekován jako "město: Dlužník potvrzuje, ulice: že...dne, číslo: 31"
 ADDRESS_REVERSE_RE = re.compile(
     r'(?<!\[)'                                       # Ne po '['
+    r'(?:'                                           # Začátek prefixů (POVINNÉ!)
+    r'(?:(?:trvale\s+)?bytem\s*:?\s*)|'             # "bytem" nebo "Bytem:"
+    r'(?:(?:trvalé\s+)?bydlišt[eě]\s*:\s*)|'        # "trvalé bydliště:"
+    r'(?:(?:sídlo(?:\s+podnikání)?|se\s+sídlem)\s*:\s*)|'  # "sídlo:" / "se sídlem:"
+    r'(?:místo\s+(?:podnikání|výkonu\s+práce)\s*:?\s*)|'  # "Místo podnikání:" nebo "Místo výkonu práce" (volitelná :)
+    r'(?:(?:adresa|trvalý\s+pobyt)\s*:\s*)|'       # "adresa:" / "trvalý pobyt:"
+    r'(?:(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)'  # "v ulici " / "na adrese "
+    r')'
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
     r'[a-záčďéěíňóřšťúůýž\s\d]{2,30}?'              # Název města (Praha 1, Brno)
     r',\s+'                                          # Čárka a mezera

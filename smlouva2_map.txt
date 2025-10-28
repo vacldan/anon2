@@ -1,5 +1,10 @@
 OSOBY
 -----
+[[PERSON_1]]: Stav
+[[PERSON_1]]: stavu
+[[PERSON_1]]: položku
+[[PERSON_1]]: stavy
+[[PERSON_1]]: položky
 [[PERSON_2]]: Tomáš Konečný
 [[PERSON_3]]: Lucie Doležalová
 
@@ -33,9 +38,4 @@ DATA
 [[DATE_6]]: 23. 5. 2025
 [[DATE_7]]: 3. 5. 1982
 [[DATE_8]]: 17. 11. 1991
-
-ADRESY
-------
-[[ADDRESS_1]]: Čechova 14, 750 02 Přerov
-[[ADDRESS_2]]: Kapucínská 8, 602 00 Brno
 
