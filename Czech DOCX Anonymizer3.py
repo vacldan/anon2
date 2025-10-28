@@ -669,7 +669,7 @@ ADDRESS_RE = re.compile(
     r'(?:(?:trvale\s+)?bytem\s*:?\s*)|'             # "bytem" nebo "Bytem:"
     r'(?:(?:trvalé\s+)?bydlišt[eě]\s*:\s*)|'        # "trvalé bydliště:"
     r'(?:(?:sídlo(?:\s+podnikání)?|se\s+sídlem)\s*:\s*)|'  # "sídlo:" / "se sídlem:"
-    r'(?:místo\s+podnikání\s*:\s*)|'                # "Místo podnikání:"
+    r'(?:místo\s+(?:podnikání|výkonu\s+práce)\s*:?\s*)|'  # "Místo podnikání:" nebo "Místo výkonu práce" (volitelná :)
     r'(?:(?:adresa|trvalý\s+pobyt)\s*:\s*)|'       # "adresa:" / "trvalý pobyt:"
     r'(?:(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)'  # "v ulici " / "na adrese " (BEZ volitelnosti!)
     r')'
@@ -1298,11 +1298,12 @@ class Anonymizer:
                 return full_match  # Neanonymizuj, nechej pro separátní zpracování jména a adresy
 
             # Zachytit prefix PŘED odstraněním (pro zachování v textu)
-            prefix_match = re.match(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:\s*', v, flags=re.IGNORECASE)
+            # Dvojtečka je volitelná pro případy jako "Článek II - Místo výkonu práce Praha 1..."
+            prefix_match = re.match(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:?\s*', v, flags=re.IGNORECASE)
             prefix = prefix_match.group(0) if prefix_match else ''
 
-            # Odstranění běžných prefixů adres (s dvojtečkou)
-            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:\s*', '', v, flags=re.IGNORECASE)
+            # Odstranění běžných prefixů adres (s dvojtečkou i bez)
+            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:?\s*', '', v, flags=re.IGNORECASE)
 
             # Odstranění běžných prefixů adres (bez dvojtečky)
             v = re.sub(r'^(trvale\s+)?bytem\s+', '', v, flags=re.IGNORECASE)
@@ -1322,7 +1323,12 @@ class Anonymizer:
                 return full_match
             tag = self._get_or_create_tag('ADDRESS', v)
             self._record_value(tag, v)
+
             # Vrátit prefix + tag (zachování kontextu)
+            # Pokud prefix neobsahuje dvojtečku, přidej ji pro čitelnost
+            if prefix and not prefix.rstrip().endswith(':'):
+                prefix = prefix.rstrip() + ': '
+
             return prefix + tag
 
         # Nejprve standardní formát "Ulice číslo, Město"
@@ -1554,6 +1560,17 @@ class Anonymizer:
                 set_text(p, txt)
 
         self.post_merge_person_tags(doc)
+
+        # Post-processing: Normalizace mezer kolem tagů (kosmetika pro enterprise reports)
+        # Zajistí, že po každém ":" následuje mezera: "Tel.:[[PHONE]]" → "Tel.: [[PHONE]]"
+        for p in iter_paragraphs(doc):
+            txt = get_text(p)
+            if '[[' in txt:
+                # Oprava: ":" následované tagem bez mezery → přidat mezeru
+                txt = re.sub(r':(\[\[)', r': \1', txt)
+                # Oprava: více mezer kolem tagů → jedna mezera
+                txt = re.sub(r'\s{2,}', ' ', txt)
+                set_text(p, txt)
 
         doc.save(output_path)
 

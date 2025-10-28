@@ -1,8 +1,8 @@
 OSOBY
 -----
 [[PERSON_11]]: Eva Horváthová
-[[PERSON_11]]: Horváthová
 [[PERSON_11]]: Horváthové
+[[PERSON_11]]: Horváthová
 [[PERSON_11]]: Evě Horváthové
 [[PERSON_12]]: Lukáš Procházka
 [[PERSON_12]]: Procházkovi
@@ -43,8 +43,8 @@ OSOBY
 [[PERSON_6]]: Martinem Novákem
 [[PERSON_7]]: Jana Svobodová
 [[PERSON_8]]: Robert Krajíček
-[[PERSON_8]]: Krajíčka
 [[PERSON_8]]: Krajíček
+[[PERSON_8]]: Krajíčka
 [[PERSON_9]]: Mikhail Volkov
 [[PERSON_9]]: Mikhailovi Volkovovi
 [[PERSON_9]]: Volkov
@@ -161,7 +161,7 @@ ADRESY
 [[ADDRESS_19]]: Nová Ves 78
 [[ADDRESS_1]]: Washingtonova 1621/11, 110 00 Praha 1
 [[ADDRESS_2]]: Kollárova 28, 602 00 Brno
-[[ADDRESS_3]]: Místo výkonu práce Praha 1, Washingtonova 1621/11
+[[ADDRESS_3]]: Praha 1, Washingtonova 1621/11
 [[ADDRESS_4]]: U Svatého Ducha 5/142, 301 00 Plzeň
 [[ADDRESS_5]]: Belgická 1247/23, 120 00 Praha 2
 [[ADDRESS_6]]: Trvale bytem: Mánesova 87, 612 00 Brno
