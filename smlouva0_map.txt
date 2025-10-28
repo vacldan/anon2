@@ -1,8 +1,8 @@
 OSOBY
 -----
 [[PERSON_11]]: Eva Horváthová
-[[PERSON_11]]: Horváthové
 [[PERSON_11]]: Horváthová
+[[PERSON_11]]: Horváthové
 [[PERSON_11]]: Evě Horváthové
 [[PERSON_12]]: Lukáš Procházka
 [[PERSON_12]]: Procházkovi
@@ -94,20 +94,20 @@ BANKOVNÍ ÚČTY
 TELEFONY
 --------
 [[PHONE_10]]: +420 724 158 963
-[[PHONE_11]]:  603 147 258
-[[PHONE_12]]:  776 325 148
+[[PHONE_11]]: 603 147 258
+[[PHONE_12]]: 776 325 148
 [[PHONE_13]]: +420 735 896 214
-[[PHONE_14]]:  604 789 321
-[[PHONE_15]]:  723 654 987
+[[PHONE_14]]: 604 789 321
+[[PHONE_15]]: 723 654 987
 [[PHONE_1]]: +420 603 125 478
-[[PHONE_2]]:  724 589 632
+[[PHONE_2]]: 724 589 632
 [[PHONE_3]]: +420 777 142 536
-[[PHONE_4]]:  605 874 125
+[[PHONE_4]]: 605 874 125
 [[PHONE_5]]: +420 608 321 547
 [[PHONE_6]]: +420 296 547 821
-[[PHONE_7]]:  723 456 891
-[[PHONE_8]]:  603 789 145
-[[PHONE_9]]:  777 365 214
+[[PHONE_7]]: 723 456 891
+[[PHONE_8]]: 603 789 145
+[[PHONE_9]]: 777 365 214
 
 EMAILY
 ------
@@ -125,7 +125,7 @@ EMAILY
 
 OBČANSKÉ PRŮKAZY
 ----------------
-[[ID_CARD_1]]:  123456789
+[[ID_CARD_1]]: 123456789
 [[ID_CARD_2]]: AB 456789
 [[ID_CARD_3]]: CD 789123
 [[ID_CARD_4]]: EF 321654
@@ -149,14 +149,14 @@ DATA
 
 ADRESY
 ------
-[[ADDRESS_10]]: Bytem: Smetanova 45, 500 02 Hradec Králové
-[[ADDRESS_11]]: Bytem: Na Výšinách 12, 148 00 Praha 4
+[[ADDRESS_10]]: Smetanova 45, 500 02 Hradec Králové
+[[ADDRESS_11]]: Na Výšinách 12, 148 00 Praha 4
 [[ADDRESS_12]]: Jugoslávská 25, 613 00 Brno
 [[ADDRESS_13]]: Pod Pavlačí 7, 140 00 Praha 4
 [[ADDRESS_14]]: Janáčkovo nábřeží 13, 150 00 Praha 5
 [[ADDRESS_15]]: Wenzigova 5, 120 00 Praha 2
-[[ADDRESS_16]]: Bytem: Přívozní 1058/8, 170 00 Praha 7
-[[ADDRESS_17]]: Bytem: Nová 156, 252 19 Rudná u Prahy
+[[ADDRESS_16]]: Přívozní 1058/8, 170 00 Praha 7
+[[ADDRESS_17]]: Nová 156, 252 19 Rudná u Prahy
 [[ADDRESS_18]]: Novákova 45, 250 01 Brandýs nad Labem
 [[ADDRESS_19]]: Nová Ves 78
 [[ADDRESS_1]]: Washingtonova 1621/11, 110 00 Praha 1
@@ -164,8 +164,8 @@ ADRESY
 [[ADDRESS_3]]: Praha 1, Washingtonova 1621/11
 [[ADDRESS_4]]: U Svatého Ducha 5/142, 301 00 Plzeň
 [[ADDRESS_5]]: Belgická 1247/23, 120 00 Praha 2
-[[ADDRESS_6]]: Trvale bytem: Mánesova 87, 612 00 Brno
-[[ADDRESS_7]]: Bytem: Londýnská 54, 639 00 Brno
+[[ADDRESS_6]]: Mánesova 87, 612 00 Brno
+[[ADDRESS_7]]: Londýnská 54, 639 00 Brno
 [[ADDRESS_8]]: Mánesova 87, Brno
 [[ADDRESS_9]]: Vinohradská 2396/184, 130 00 Praha 3
 

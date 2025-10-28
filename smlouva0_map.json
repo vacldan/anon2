@@ -1,9 +1,9 @@
 {
   "[[ADDRESS_10]]": [
-    "Bytem: Smetanova 45, 500 02 Hradec Králové"
+    "Smetanova 45, 500 02 Hradec Králové"
   ],
   "[[ADDRESS_11]]": [
-    "Bytem: Na Výšinách 12, 148 00 Praha 4"
+    "Na Výšinách 12, 148 00 Praha 4"
   ],
   "[[ADDRESS_12]]": [
     "Jugoslávská 25, 613 00 Brno"
@@ -18,10 +18,10 @@
     "Wenzigova 5, 120 00 Praha 2"
   ],
   "[[ADDRESS_16]]": [
-    "Bytem: Přívozní 1058/8, 170 00 Praha 7"
+    "Přívozní 1058/8, 170 00 Praha 7"
   ],
   "[[ADDRESS_17]]": [
-    "Bytem: Nová 156, 252 19 Rudná u Prahy"
+    "Nová 156, 252 19 Rudná u Prahy"
   ],
   "[[ADDRESS_18]]": [
     "Novákova 45, 250 01 Brandýs nad Labem"
@@ -45,10 +45,10 @@
     "Belgická 1247/23, 120 00 Praha 2"
   ],
   "[[ADDRESS_6]]": [
-    "Trvale bytem: Mánesova 87, 612 00 Brno"
+    "Mánesova 87, 612 00 Brno"
   ],
   "[[ADDRESS_7]]": [
-    "Bytem: Londýnská 54, 639 00 Brno"
+    "Londýnská 54, 639 00 Brno"
   ],
   "[[ADDRESS_8]]": [
     "Mánesova 87, Brno"
@@ -204,7 +204,7 @@
     "36985214"
   ],
   "[[ID_CARD_1]]": [
-    " 123456789"
+    "123456789"
   ],
   "[[ID_CARD_2]]": [
     "AB 456789"
@@ -226,8 +226,8 @@
   ],
   "[[PERSON_11]]": [
     "Eva Horváthová",
-    "Horváthové",
     "Horváthová",
+    "Horváthové",
     "Evě Horváthové"
   ],
   "[[PERSON_12]]": [
@@ -312,31 +312,31 @@
     "+420 724 158 963"
   ],
   "[[PHONE_11]]": [
-    " 603 147 258"
+    "603 147 258"
   ],
   "[[PHONE_12]]": [
-    " 776 325 148"
+    "776 325 148"
   ],
   "[[PHONE_13]]": [
     "+420 735 896 214"
   ],
   "[[PHONE_14]]": [
-    " 604 789 321"
+    "604 789 321"
   ],
   "[[PHONE_15]]": [
-    " 723 654 987"
+    "723 654 987"
   ],
   "[[PHONE_1]]": [
     "+420 603 125 478"
   ],
   "[[PHONE_2]]": [
-    " 724 589 632"
+    "724 589 632"
   ],
   "[[PHONE_3]]": [
     "+420 777 142 536"
   ],
   "[[PHONE_4]]": [
-    " 605 874 125"
+    "605 874 125"
   ],
   "[[PHONE_5]]": [
     "+420 608 321 547"
@@ -345,13 +345,13 @@
     "+420 296 547 821"
   ],
   "[[PHONE_7]]": [
-    " 723 456 891"
+    "723 456 891"
   ],
   "[[PHONE_8]]": [
-    " 603 789 145"
+    "603 789 145"
   ],
   "[[PHONE_9]]": [
-    " 777 365 214"
+    "777 365 214"
   ],
   "[[PLACE_1]]": [
     "Brno"

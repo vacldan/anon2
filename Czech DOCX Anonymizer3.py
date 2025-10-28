@@ -809,6 +809,8 @@ class Anonymizer:
         return tag
 
     def _record_value(self, tag: str, value: str):
+        # Normalize: odstranění leading/trailing mezer a vícenásobných mezer
+        value = re.sub(r'\s+', ' ', value).strip()
         if value and re.search(r'(?<!\w)'+re.escape(value)+r'(?!\w)', self.source_text):
             if value not in self.tag_map[tag]:
                 self.tag_map[tag].append(value)
@@ -1299,14 +1301,14 @@ class Anonymizer:
 
             # Zachytit prefix PŘED odstraněním (pro zachování v textu)
             # Dvojtečka je volitelná pro případy jako "Článek II - Místo výkonu práce Praha 1..."
-            prefix_match = re.match(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:?\s*', v, flags=re.IGNORECASE)
+            prefix_match = re.match(r'^(Trvalé\s+bydliště|Bydliště|(?:Trvale\s+)?[Bb]ytem|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:?\s*', v, flags=re.IGNORECASE)
             prefix = prefix_match.group(0) if prefix_match else ''
 
             # Odstranění běžných prefixů adres (s dvojtečkou i bez)
-            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:?\s*', '', v, flags=re.IGNORECASE)
+            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Bytem|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:?\s*', '', v, flags=re.IGNORECASE)
 
-            # Odstranění běžných prefixů adres (bez dvojtečky)
-            v = re.sub(r'^(trvale\s+)?bytem\s+', '', v, flags=re.IGNORECASE)
+            # Odstranění prefixů "trvale bytem" (s dvojtečkou i bez)
+            v = re.sub(r'^(trvale\s+)?bytem\s*:?\s*', '', v, flags=re.IGNORECASE)
 
             # Odstranění kontextových frází
             v = re.sub(r'^.{0,30}?\b(na\s+adrese|v\s+domě|domu|v\s+ulic[ií])\s+', '', v, flags=re.IGNORECASE)
@@ -1562,12 +1564,16 @@ class Anonymizer:
         self.post_merge_person_tags(doc)
 
         # Post-processing: Normalizace mezer kolem tagů (kosmetika pro enterprise reports)
-        # Zajistí, že po každém ":" následuje mezera: "Tel.:[[PHONE]]" → "Tel.: [[PHONE]]"
+        # Zajistí správné mezery: "Tel.:[[PHONE]]" → "Tel.: [[PHONE]]", "[[EMAIL]],[[PHONE]]" → "[[EMAIL]], [[PHONE]]"
         for p in iter_paragraphs(doc):
             txt = get_text(p)
             if '[[' in txt:
                 # Oprava: ":" následované tagem bez mezery → přidat mezeru
                 txt = re.sub(r':(\[\[)', r': \1', txt)
+                # Oprava: "." následované tagem bez mezery → přidat mezeru (tel.[[PHONE]])
+                txt = re.sub(r'\.(\[\[)', r'. \1', txt)
+                # Oprava: "," následované tagem bez mezery → přidat mezeru ([[EMAIL]],[[PHONE]])
+                txt = re.sub(r',(\[\[)', r', \1', txt)
                 # Oprava: více mezer kolem tagů → jedna mezera
                 txt = re.sub(r'\s{2,}', ' ', txt)
                 set_text(p, txt)
