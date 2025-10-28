@@ -43,8 +43,8 @@ OSOBY
 [[PERSON_6]]: Martinem Novákem
 [[PERSON_7]]: Jana Svobodová
 [[PERSON_8]]: Robert Krajíček
-[[PERSON_8]]: Krajíček
 [[PERSON_8]]: Krajíčka
+[[PERSON_8]]: Krajíček
 [[PERSON_9]]: Mikhail Volkov
 [[PERSON_9]]: Mikhailovi Volkovovi
 [[PERSON_9]]: Volkov
@@ -168,4 +168,8 @@ ADRESY
 [[ADDRESS_7]]: Bytem: Londýnská 54, 639 00 Brno
 [[ADDRESS_8]]: Mánesova 87, Brno
 [[ADDRESS_9]]: Vinohradská 2396/184, 130 00 Praha 3
+
+MÍSTA NAROZENÍ
+--------------
+[[PLACE_1]]: Brno
 

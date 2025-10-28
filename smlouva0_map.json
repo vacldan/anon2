@@ -300,8 +300,8 @@
   ],
   "[[PERSON_8]]": [
     "Robert Krajíček",
-    "Krajíček",
-    "Krajíčka"
+    "Krajíčka",
+    "Krajíček"
   ],
   "[[PERSON_9]]": [
     "Mikhail Volkov",
@@ -352,5 +352,8 @@
   ],
   "[[PHONE_9]]": [
     " 777 365 214"
+  ],
+  "[[PLACE_1]]": [
+    "Brno"
   ]
 }

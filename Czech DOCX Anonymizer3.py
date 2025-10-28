@@ -704,6 +704,16 @@ IDCARD_RE  = re.compile(r'\b\d{6,9}/\d{3,4}\b|\b\d{9}\b|[A-Z]{2,3}[ \t]?\d{6,9}\
 PHONE_RE   = re.compile(r'(?<!\d)(?:\+420|00420)?[ \t\-]?\d{3}[ \t\-]?\d{3}[ \t\-]?\d{3}(?!\s*/\d{4})\b')
 EMAIL_RE   = re.compile(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}')
 DATE_RE    = re.compile(r'\b\d{1,2}\.\s*\d{1,2}\.\s*\d{4}\b')
+
+# BIRTHPLACE_RE - detekuje místo narození pro GDPR compliance
+# Příklad: "Místo narození: Brno", "Narozena v Praze"
+BIRTHPLACE_RE = re.compile(
+    r'(?:Místo\s+narození|Narozen[aáý]?\s+(?:v|ve)\s+|Rodiště)\s*:\s*'
+    r'([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž\s\d]{2,50}?)'
+    r'(?=\s*(?:$|[,.\n]|Rodn[éě]|RČ|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Číslo|Datum|IČO|DIČ|Bydlišt|Bytem|Adresa))',
+    re.IGNORECASE | re.UNICODE
+)
+
 STATUTE_RE = re.compile(r'\b(Sb\.?|zákon(a|u)?|zákon\s*č\.)\b', re.IGNORECASE)
 PAIR_RE    = re.compile(r'(?<!\w)([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]{1,})\s+([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]{1,})(?!\w)')
 TITLES_RE  = re.compile(r'\b(Mgr|Ing|Dr|Ph\.?D|RNDr|MUDr|JUDr|PhDr|PaedDr|ThDr|RCDr|MVDr|DiS|Bc|BcA|MBA|LL\.?M|prof|doc|pan|paní|pán|slečna)\.?\s+', re.IGNORECASE)
@@ -711,6 +721,10 @@ TITLES_RE  = re.compile(r'\b(Mgr|Ing|Dr|Ph\.?D|RNDr|MUDr|JUDr|PhDr|PaedDr|ThDr|R
 # IČO a DIČ
 ICO_RE     = re.compile(r'\bIČO\s*:?\s*(\d{8})\b', re.IGNORECASE)
 DIC_RE     = re.compile(r'\bDIČ\s*:?\s*(CZ\d{8,10})\b', re.IGNORECASE)
+
+# IBAN a BIC/SWIFT (GDPR - mezinárodní bankovní údaje)
+IBAN_RE    = re.compile(r'\b([A-Z]{2}\d{2}[A-Z0-9]{11,30})\b')  # IBAN: 2 písmena země + 2 číslice + 11-30 znaků
+BIC_RE     = re.compile(r'\b([A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)\b')  # BIC/SWIFT: 8 nebo 11 znaků
 
 # Osobní číslo zaměstnance
 EMP_ID_RE  = re.compile(r'\b(?:osobn[íi]\s+č[íi]slo(?:\s+zaměstnance)?|zaměstnaneck[éeě]\s+č[íi]slo)\s*:?\s*(\d+)\b', re.IGNORECASE)
@@ -1320,6 +1334,24 @@ class Anonymizer:
         text = self._replace_entity(text, EMAIL_RE, 'EMAIL')
         text = self._replace_entity(text, DATE_RE, 'DATE')
 
+        # GDPR: Místo narození (toponyma jsou PII)
+        def birthplace_repl(m):
+            full_match = m.group(0)
+            place = m.group(1).strip()
+
+            # Zachytit prefix PŘED místem (pro zachování v textu)
+            prefix_match = re.match(r'^(.*?:\s*)', full_match, re.IGNORECASE)
+            prefix = prefix_match.group(1) if prefix_match else ''
+
+            # Vytvoř tag pro místo
+            tag = self._get_or_create_tag('PLACE', place)
+            self._record_value(tag, place)
+
+            # Vrátit prefix + tag
+            return prefix + tag
+
+        text = BIRTHPLACE_RE.sub(birthplace_repl, text)
+
         def phone_repl(m):
             v = m.group(0)
             s, e = m.span()
@@ -1393,6 +1425,12 @@ class Anonymizer:
             # Replace just the number, keep the label
             return full_match.replace(dic_num, tag)
         text = DIC_RE.sub(dic_repl, text)
+
+        # GDPR: IBAN (mezinárodní bankovní účet)
+        text = self._replace_entity(text, IBAN_RE, 'IBAN')
+
+        # GDPR: BIC/SWIFT (identifikátor banky)
+        text = self._replace_entity(text, BIC_RE, 'BIC')
 
         def birth_or_id_repl(m):
             v = m.group(0)
@@ -1531,11 +1569,14 @@ class Anonymizer:
                 ("DIČ", "DIC"),
                 ("OSOBNÍ ČÍSLA ZAMĚSTNANCŮ", "EMP_ID"),
                 ("BANKOVNÍ ÚČTY", "BANK"),
+                ("IBAN", "IBAN"),
+                ("BIC/SWIFT", "BIC"),
                 ("TELEFONY", "PHONE"),
                 ("EMAILY", "EMAIL"),
                 ("OBČANSKÉ PRŮKAZY", "ID_CARD"),
                 ("DATA", "DATE"),
                 ("ADRESY", "ADDRESS"),
+                ("MÍSTA NAROZENÍ", "PLACE"),
             ]
             for title, pref in sections:
                 items = []
