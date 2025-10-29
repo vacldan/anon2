@@ -43,8 +43,8 @@ OSOBY
 [[PERSON_6]]: Martinem Novákem
 [[PERSON_7]]: Jana Svobodová
 [[PERSON_8]]: Robert Krajíček
-[[PERSON_8]]: Krajíček
 [[PERSON_8]]: Krajíčka
+[[PERSON_8]]: Krajíček
 [[PERSON_9]]: Mikhail Volkov
 [[PERSON_9]]: Mikhailovi Volkovovi
 [[PERSON_9]]: Volkov
