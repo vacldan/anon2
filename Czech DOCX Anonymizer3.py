@@ -724,6 +724,18 @@ PHONE_RE   = re.compile(r'(?<!\d)(?:\+420|00420)?[ \t\-]?\d{3}[ \t\-]?\d{3}[ \t\
 EMAIL_RE   = re.compile(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}')
 DATE_RE    = re.compile(r'\b\d{1,2}\.\s*\d{1,2}\.\s*\d{4}\b')
 
+# DATE_WORDS_RE - detekuje datumy psané s českými názvy měsíců
+# Příklady: "13. srpna 2025", "31. července 2025", "1. ledna 2024"
+DATE_WORDS_RE = re.compile(
+    r'\b(\d{1,2})\.\s+(ledna|února|března|dubna|května|června|července|srpna|září|října|listopadu|prosince)\s+(\d{4})\b',
+    re.IGNORECASE | re.UNICODE
+)
+
+# LICENSE_PLATE_RE - detekuje české poznávací značky (SPZ/RZ)
+# Formáty: "7AB 4567" (číslice + 2 písmena + mezera + 4 číslice)
+#          "5AC 9845", "4BD 7654" atd.
+LICENSE_PLATE_RE = re.compile(r'\b\d[A-Z]{2}\s\d{4}\b')
+
 # BIRTHPLACE_RE - detekuje místo narození pro GDPR compliance
 # Příklad: "Místo narození: Brno", "Narozena v Praze"
 BIRTHPLACE_RE = re.compile(
@@ -1362,8 +1374,49 @@ class Anonymizer:
         # Pak obrácený formát "Město, Ulice číslo" (např. "Praha 1, Washingtonova 1621/11")
         text = ADDRESS_REVERSE_RE.sub(addr_repl, text)
 
+        # GDPR: SPZ/RZ (poznávací značky) jsou osobní identifikátory vozidla
+        text = self._replace_entity(text, LICENSE_PLATE_RE, 'LICENSE_PLATE')
+
         text = self._replace_entity(text, EMAIL_RE, 'EMAIL')
-        text = self._replace_entity(text, DATE_RE, 'DATE')
+
+        # Datumy - normalizovat na DD.MM.RRRR formát
+        def date_repl(m):
+            v = m.group(0)
+            # Parse date: "10.4.2025" → "10.04.2025", "23.09.1985" → "23.09.1985"
+            parts = re.split(r'[.\s]+', v.strip())
+            if len(parts) == 3:
+                day = parts[0].zfill(2)
+                month = parts[1].zfill(2)
+                year = parts[2]
+                normalized = f'{day}.{month}.{year}'
+            else:
+                normalized = v  # Fallback
+
+            tag = self._get_or_create_tag('DATE', normalized)
+            self._record_value(tag, normalized)
+            return tag
+
+        text = DATE_RE.sub(date_repl, text)
+
+        # Datumy psané slovy ("13. srpna 2025") - konvertovat na DD.MM.RRRR
+        MONTH_MAP = {
+            'ledna': '01', 'února': '02', 'března': '03', 'dubna': '04',
+            'května': '05', 'června': '06', 'července': '07', 'srpna': '08',
+            'září': '09', 'října': '10', 'listopadu': '11', 'prosince': '12'
+        }
+        def date_words_repl(m):
+            day = m.group(1).zfill(2)  # 1 → 01
+            month_name = m.group(2).lower()
+            year = m.group(3)
+
+            month_num = MONTH_MAP.get(month_name, '??')
+            normalized = f'{day}.{month_num}.{year}'
+
+            tag = self._get_or_create_tag('DATE', normalized)
+            self._record_value(tag, normalized)
+            return tag
+
+        text = DATE_WORDS_RE.sub(date_words_repl, text)
 
         # GDPR: Místo narození (toponyma jsou PII)
         def birthplace_repl(m):
@@ -1403,6 +1456,12 @@ class Anonymizer:
             if self._is_statute(text, s, e):
                 return m.group(0)
             raw = m.group(0)
+
+            # KRITICKÁ POLITIKA: Shape má přednost před labelem!
+            # Pokud má tvar RČ (6 číslic / 3-4 číslice) → neanonymizuj zde
+            # Nech to pro BIRTHID_RE který ho správně označí jako BIRTH_ID
+            if re.match(r'^\d{6}/\d{3,4}$', raw):
+                return raw  # Vrátit bez změny, bude zpracováno jako BIRTH_ID
 
             pre = text[max(0, s-30):s]
             post = text[e:e+30]
@@ -1460,14 +1519,47 @@ class Anonymizer:
         # GDPR: IBAN (mezinárodní bankovní účet)
         text = self._replace_entity(text, IBAN_RE, 'IBAN')
 
-        # GDPR: BIC/SWIFT (identifikátor banky)
-        text = self._replace_entity(text, BIC_RE, 'BIC')
+        # GDPR: BIC/SWIFT (identifikátor banky) - s kontrolou kontextu
+        # KRITICKÁ OPRAVA: "SYNERGIE" není BIC, je to název projektu
+        BIC_BLACKLIST = {'synergie', 'project', 'projekt', 'alliance', 'aliance'}
+        def bic_repl(m):
+            v = m.group(1)  # BIC_RE má capturing group
+            v_lower = v.lower()
+
+            # Blacklist běžných slov (projektové názvy atd.)
+            if v_lower in BIC_BLACKLIST:
+                return m.group(0)  # Neanonymizuj
+
+            # Kontext check: BIC by měl být poblíž "BIC", "SWIFT", "kód banky" atd.
+            s, e = m.span()
+            pre = text[max(0, s-50):s]
+            post = text[e:e+50]
+
+            if re.search(r'\b(BIC|SWIFT|kód\s+banky|bankovní\s+kód)\b', pre+post, re.IGNORECASE):
+                tag = self._get_or_create_tag('BIC', v)
+                self._record_value(tag, v)
+                return tag
+
+            # Pokud není bankovní kontext, neanonymizuj
+            return m.group(0)
+
+        text = BIC_RE.sub(bic_repl, text)
 
         def birth_or_id_repl(m):
             v = m.group(0)
             s, e = m.span()
             pre = text[max(0, s-40):s]
             post = text[e:e+40]
+
+            # KRITICKÁ POLITIKA: Shape má přednost před labelem!
+            # Pokud má tvar RČ (6 číslic / 3-4 číslice) → VŽDY [[BIRTH_ID_*]]
+            # I když je kontext "Číslo OP:", fyzicky je to rodné číslo
+            # Normalizuj číslo (odstraň mezery kolem lomítka)
+            v_normalized = re.sub(r'\s*/\s*', '/', v)
+            if re.match(r'^\d{6}/\d{3,4}$', v_normalized):
+                tag = self._get_or_create_tag('BIRTH_ID', v)
+                self._record_value(tag, v)
+                return tag
 
             # DŮLEŽITÉ: Kontroluj CTX_BIRTH PŘED CTX_OP!
             # "Rodné číslo: 925315/6847 Číslo OP: 123" by jinak bylo ID_CARD kvůli "OP"
@@ -1493,17 +1585,13 @@ class Anonymizer:
             v = m.group(0)
             s, e = m.span()
 
-            # DŮLEŽITÉ: Pokud je to RČ formát (6 číslic / 3-4 číslice)
-            # a v kontextu je "Rodné číslo", je to BIRTH_ID, ne ID_CARD
-            if re.match(r'\d{6}/\d{3,4}$', v):
-                pre = text[max(0, s-40):s]
-                post = text[e:e+40]
-
-                # Pokud je v kontextu zmínka o rodném čísle
-                if CTX_BIRTH.search(pre+post) or re.search(r'Rodn[éě]\s+č[íi]slo', pre+post, re.IGNORECASE):
-                    tag = self._get_or_create_tag('BIRTH_ID', v)
-                    self._record_value(tag, v)
-                    return tag
+            # KRITICKÁ POLITIKA: Shape má přednost před labelem!
+            # Pokud má tvar RČ (6 číslic / 3-4 číslice) → VŽDY [[BIRTH_ID_*]]
+            # I když je kontext "Číslo OP:", fyzicky je to rodné číslo
+            if re.match(r'^\d{6}/\d{3,4}$', v):
+                tag = self._get_or_create_tag('BIRTH_ID', v)
+                self._record_value(tag, v)
+                return tag
 
             # Jinak je to ID_CARD (občanský průkaz)
             tag = self._get_or_create_tag('ID_CARD', v)
@@ -1620,6 +1708,7 @@ class Anonymizer:
                 ("TELEFONY", "PHONE"),
                 ("EMAILY", "EMAIL"),
                 ("OBČANSKÉ PRŮKAZY", "ID_CARD"),
+                ("POZNÁVACÍ ZNAČKY (SPZ/RZ)", "LICENSE_PLATE"),
                 ("DATA", "DATE"),
                 ("ADRESY", "ADDRESS"),
                 ("MÍSTA NAROZENÍ", "PLACE"),

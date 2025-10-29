@@ -43,8 +43,8 @@ OSOBY
 [[PERSON_6]]: Martinem Novákem
 [[PERSON_7]]: Jana Svobodová
 [[PERSON_8]]: Robert Krajíček
-[[PERSON_8]]: Krajíčka
 [[PERSON_8]]: Krajíček
+[[PERSON_8]]: Krajíčka
 [[PERSON_9]]: Mikhail Volkov
 [[PERSON_9]]: Mikhailovi Volkovovi
 [[PERSON_9]]: Volkov
@@ -135,17 +135,8 @@ OBČANSKÉ PRŮKAZY
 
 DATA
 ----
-[[DATE_10]]: 15.5.1975
-[[DATE_11]]: 12.3.1996
-[[DATE_1]]: 15.3.1992
-[[DATE_2]]: 1.6.2025
 [[DATE_3]]: 23.09.1985
-[[DATE_4]]: 10.4.2025
-[[DATE_5]]: 5.8.1968
-[[DATE_6]]: 12.2.2020
 [[DATE_7]]: 12.11.1985
-[[DATE_8]]: 4.6.1979
-[[DATE_9]]: 23.4.1988
 
 ADRESY
 ------

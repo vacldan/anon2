@@ -33,14 +33,12 @@ EMAILY
 [[EMAIL_3]]: marek.sedy@example.org
 [[EMAIL_4]]: tereza.valachova@example.net
 
-DATA
-----
-[[DATE_1]]: 15. 4. 1982
-[[DATE_2]]: 3. 6. 1990
-[[DATE_3]]: 21. 9. 1985
-[[DATE_4]]: 12. 1. 1995
-[[DATE_5]]: 1. 9. 2025
-[[DATE_6]]: 31. 8. 2026
+POZNÁVACÍ ZNAČKY (SPZ/RZ)
+-------------------------
+[[LICENSE_PLATE_1]]: 7AB 4567
+[[LICENSE_PLATE_2]]: 5AC 9845
+[[LICENSE_PLATE_3]]: 4BD 7654
+[[LICENSE_PLATE_4]]: 3CZ 4598
 
 ADRESY
 ------

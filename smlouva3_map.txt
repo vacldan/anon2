@@ -3,20 +3,14 @@ OSOBY
 [[PERSON_1]]: Martin Horák
 [[PERSON_2]]: Tomáš Černý
 
+RODNÁ ČÍSLA
+-----------
+[[BIRTH_ID_1]]: 854123/3256
+[[BIRTH_ID_2]]: 901108/4521
+
 BANKOVNÍ ÚČTY
 -------------
 [[BANK_1]]: 123456789/0100
-
-OBČANSKÉ PRŮKAZY
-----------------
-[[ID_CARD_1]]: 854123/3256
-[[ID_CARD_2]]: 901108/4521
-
-DATA
-----
-[[DATE_1]]: 12. 3. 1985
-[[DATE_2]]: 8. 11. 1990
-[[DATE_3]]: 31. 7. 2025
 
 ADRESY
 ------
