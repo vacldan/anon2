@@ -1,12 +1,7 @@
 OSOBY
 -----
-[[PERSON_1]]: Stav
-[[PERSON_1]]: stavu
-[[PERSON_1]]: položku
-[[PERSON_1]]: stavy
-[[PERSON_1]]: položky
-[[PERSON_2]]: Tomáš Konečný
-[[PERSON_3]]: Lucie Doležalová
+[[PERSON_1]]: Tomáš Konečný
+[[PERSON_2]]: Lucie Doležalová
 
 RODNÁ ČÍSLA
 -----------

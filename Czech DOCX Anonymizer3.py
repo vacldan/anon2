@@ -108,6 +108,14 @@ SURNAME_BLACKLIST = {
     'cena','kauce','záloha','platba','sankce','odpovědnost','poškození','opravy','závady',
     'přepis','přepisem','vyúčtování','paušálně','roční','měsíční',
 
+    # Tabulková a běžná slova (KRITICKÁ OPRAVA: zabránit "Položka Stav" = jméno)
+    'stav','stavu','stavem','stavy','stavů','stavech',
+    'položka','položky','položku','položek','položkám','položkou','položkami',
+    'počet','počtu','počtem','počty','popis','popisu','popisem',
+    'celkem','součet','výše','hodnota','hodnoty','množství',
+    'období','období','měsíc','měsíce','měsíců','měsíci',
+    'splatnost','splatnosti','vyúčtování','doklad','dokladu','faktura','faktury',
+
     # Značky a produkty
     'jena','dominik','ikea','gorenje','bosch','möbelix',
 
@@ -1223,6 +1231,10 @@ class Anonymizer:
             if f_tok.lower() in ROLE_STOP or l_tok.lower() in ROLE_STOP:
                 continue
             if normalize_for_matching(l_tok) in SURNAME_BLACKLIST:
+                continue
+            # KRITICKÁ OPRAVA: Kontrola křestního jména proti blacklistu
+            # Zabránit detekci "Položka Stav" jako jméno
+            if normalize_for_matching(f_tok) in SURNAME_BLACKLIST:
                 continue
 
             f_nom = infer_first_name_nominative(f_tok, l_tok) or f_tok
