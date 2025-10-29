@@ -690,7 +690,23 @@ ADDRESS_RE = re.compile(
     r'(?:\d{3}\s?\d{2}\s+)?'                         # PSČ volitelné (612 00)
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
     r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}?'              # Název města (non-greedy! - nezachytí "Číslo"/"Nar"/"Rodné")
-    r'(?=\s*(?:$|[,.\n]|(?:Nar\.|RČ|Rodn[éě]|IČO|DIČ|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Číslo|Datum|Zastoupen|Jednatel|vyd[aá]n)))',  # Zastaví se před klíčovými slovy
+    r'(?=\s*(?:$|[,.\n()\[\]]|(?:Nar\.|RČ|Rodn[éě]|IČO|DIČ|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Číslo|Datum|Zastoupen|Jednatel|vyd[aá]n|dále)))',  # KRITICKÁ OPRAVA: přidány (, ), dále
+    re.UNICODE | re.IGNORECASE
+)
+
+# ADDRESS_WITH_ZIP_RE - adresy s PSČ BEZ prefixu (pro tabulky, kde prefix je v jiném cell)
+# Formát: "Ulice číslo, PSČ Město" - PSČ je POVINNÉ pro jednoznačnost
+# Příklad: "Čechova 14, 750 02 Přerov" v tabulce pod hlavičkou "Adresa trvalého pobytu"
+ADDRESS_WITH_ZIP_RE = re.compile(
+    r'(?<!\[)'                                       # Ne po '['
+    r'\b([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                      # Velké písmeno (začátek ulice)
+    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice
+    r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu
+    r',\s*'                                          # Čárka
+    r'\d{3}\s?\d{2}\s+'                              # PSČ POVINNÉ (612 00 nebo 61200)
+    r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
+    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}?'              # Název města
+    r')\b',                                          # Word boundary
     re.UNICODE | re.IGNORECASE
 )
 
@@ -733,8 +749,14 @@ DATE_WORDS_RE = re.compile(
 
 # LICENSE_PLATE_RE - detekuje české poznávací značky (SPZ/RZ)
 # Formáty: "7AB 4567" (číslice + 2 písmena + mezera + 4 číslice)
+#          "3M1 2345" (číslice + písmeno + číslice + mezera + 4 číslice)
 #          "5AC 9845", "4BD 7654" atd.
-LICENSE_PLATE_RE = re.compile(r'\b\d[A-Z]{2}\s\d{4}\b')
+LICENSE_PLATE_RE = re.compile(r'\b\d[A-Z]{1,2}\d?\s\d{4}\b')
+
+# VIN_RE - detekuje VIN (Vehicle Identification Number)
+# Formát: 17 znaků (velká písmena A-Z kromě I, O, Q + číslice 0-9)
+# Příklad: TMBJK61Z3G0123456
+VIN_RE = re.compile(r'\b[A-HJ-NPR-Z0-9]{17}\b')
 
 # BIRTHPLACE_RE - detekuje místo narození pro GDPR compliance
 # Příklad: "Místo narození: Brno", "Narozena v Praze"
@@ -1368,7 +1390,16 @@ class Anonymizer:
 
             return prefix + tag
 
-        # Nejprve standardní formát "Ulice číslo, Město"
+        # KRITICKÁ OPRAVA: Adresy s PSČ BEZ prefixu (tabulky)
+        # Musí být PRVNÍ, protože je nejspecifičtější (vyžaduje PSČ)
+        def addr_with_zip_repl(m):
+            v = m.group(1)  # ADDRESS_WITH_ZIP_RE má capturing group
+            tag = self._get_or_create_tag('ADDRESS', v)
+            self._record_value(tag, v)
+            return tag
+        text = ADDRESS_WITH_ZIP_RE.sub(addr_with_zip_repl, text)
+
+        # Pak standardní formát "Ulice číslo, Město" S PREFIXEM
         text = ADDRESS_RE.sub(addr_repl, text)
 
         # Pak obrácený formát "Město, Ulice číslo" (např. "Praha 1, Washingtonova 1621/11")
@@ -1377,23 +1408,26 @@ class Anonymizer:
         # GDPR: SPZ/RZ (poznávací značky) jsou osobní identifikátory vozidla
         text = self._replace_entity(text, LICENSE_PLATE_RE, 'LICENSE_PLATE')
 
+        # GDPR: VIN (Vehicle Identification Number) - 17-znakový kód vozidla
+        text = self._replace_entity(text, VIN_RE, 'VIN')
+
         text = self._replace_entity(text, EMAIL_RE, 'EMAIL')
 
         # Datumy - normalizovat na DD.MM.RRRR formát
         def date_repl(m):
-            v = m.group(0)
+            original = m.group(0)  # Původní hodnota z textu
             # Parse date: "10.4.2025" → "10.04.2025", "23.09.1985" → "23.09.1985"
-            parts = re.split(r'[.\s]+', v.strip())
+            parts = re.split(r'[.\s]+', original.strip())
             if len(parts) == 3:
                 day = parts[0].zfill(2)
                 month = parts[1].zfill(2)
                 year = parts[2]
                 normalized = f'{day}.{month}.{year}'
             else:
-                normalized = v  # Fallback
+                normalized = original  # Fallback
 
             tag = self._get_or_create_tag('DATE', normalized)
-            self._record_value(tag, normalized)
+            self._record_value(tag, original)  # KRITICKÉ: Zaznamenat PŮVODNÍ hodnotu!
             return tag
 
         text = DATE_RE.sub(date_repl, text)
@@ -1405,6 +1439,7 @@ class Anonymizer:
             'září': '09', 'října': '10', 'listopadu': '11', 'prosince': '12'
         }
         def date_words_repl(m):
+            original = m.group(0)  # Původní hodnota ("13. srpna 2025")
             day = m.group(1).zfill(2)  # 1 → 01
             month_name = m.group(2).lower()
             year = m.group(3)
@@ -1413,7 +1448,7 @@ class Anonymizer:
             normalized = f'{day}.{month_num}.{year}'
 
             tag = self._get_or_create_tag('DATE', normalized)
-            self._record_value(tag, normalized)
+            self._record_value(tag, original)  # KRITICKÉ: Zaznamenat PŮVODNÍ slovní formu!
             return tag
 
         text = DATE_WORDS_RE.sub(date_words_repl, text)
@@ -1709,6 +1744,7 @@ class Anonymizer:
                 ("EMAILY", "EMAIL"),
                 ("OBČANSKÉ PRŮKAZY", "ID_CARD"),
                 ("POZNÁVACÍ ZNAČKY (SPZ/RZ)", "LICENSE_PLATE"),
+                ("VIN (VOZIDLA)", "VIN"),
                 ("DATA", "DATE"),
                 ("ADRESY", "ADDRESS"),
                 ("MÍSTA NAROZENÍ", "PLACE"),

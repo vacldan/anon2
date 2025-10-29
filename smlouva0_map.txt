@@ -1,8 +1,8 @@
 OSOBY
 -----
 [[PERSON_11]]: Eva Horváthová
-[[PERSON_11]]: Horváthová
 [[PERSON_11]]: Horváthové
+[[PERSON_11]]: Horváthová
 [[PERSON_11]]: Evě Horváthové
 [[PERSON_12]]: Lukáš Procházka
 [[PERSON_12]]: Procházkovi
@@ -135,30 +135,39 @@ OBČANSKÉ PRŮKAZY
 
 DATA
 ----
+[[DATE_10]]: 15.5.1975
+[[DATE_11]]: 12.3.1996
+[[DATE_1]]: 15.3.1992
+[[DATE_2]]: 1.6.2025
 [[DATE_3]]: 23.09.1985
+[[DATE_4]]: 10.4.2025
+[[DATE_5]]: 5.8.1968
+[[DATE_6]]: 12.2.2020
 [[DATE_7]]: 12.11.1985
+[[DATE_8]]: 4.6.1979
+[[DATE_9]]: 23.4.1988
 
 ADRESY
 ------
-[[ADDRESS_10]]: Smetanova 45, 500 02 Hradec Králové
-[[ADDRESS_11]]: Na Výšinách 12, 148 00 Praha 4
+[[ADDRESS_10]]: Smetanova 45, 500 02 Hradec
+[[ADDRESS_11]]: Na Výšinách 12, 148 00 Praha
 [[ADDRESS_12]]: Jugoslávská 25, 613 00 Brno
-[[ADDRESS_13]]: Pod Pavlačí 7, 140 00 Praha 4
-[[ADDRESS_14]]: Janáčkovo nábřeží 13, 150 00 Praha 5
-[[ADDRESS_15]]: Wenzigova 5, 120 00 Praha 2
-[[ADDRESS_16]]: Přívozní 1058/8, 170 00 Praha 7
-[[ADDRESS_17]]: Nová 156, 252 19 Rudná u Prahy
-[[ADDRESS_18]]: Novákova 45, 250 01 Brandýs nad Labem
+[[ADDRESS_13]]: Pod Pavlačí 7, 140 00 Praha
+[[ADDRESS_14]]: Janáčkovo nábřeží 13, 150 00 Praha
+[[ADDRESS_15]]: Wenzigova 5, 120 00 Praha
+[[ADDRESS_16]]: Přívozní 1058/8, 170 00 Praha
+[[ADDRESS_17]]: Nová 156, 252 19 Rudná
+[[ADDRESS_18]]: Novákova 45, 250 01 Brandýs
 [[ADDRESS_19]]: Nová Ves 78
-[[ADDRESS_1]]: Washingtonova 1621/11, 110 00 Praha 1
+[[ADDRESS_1]]: Washingtonova 1621/11, 110 00 Praha
 [[ADDRESS_2]]: Kollárova 28, 602 00 Brno
 [[ADDRESS_3]]: Praha 1, Washingtonova 1621/11
 [[ADDRESS_4]]: U Svatého Ducha 5/142, 301 00 Plzeň
-[[ADDRESS_5]]: Belgická 1247/23, 120 00 Praha 2
+[[ADDRESS_5]]: Belgická 1247/23, 120 00 Praha
 [[ADDRESS_6]]: Mánesova 87, 612 00 Brno
 [[ADDRESS_7]]: Londýnská 54, 639 00 Brno
 [[ADDRESS_8]]: Mánesova 87, Brno
-[[ADDRESS_9]]: Vinohradská 2396/184, 130 00 Praha 3
+[[ADDRESS_9]]: Vinohradská 2396/184, 130 00 Praha
 
 MÍSTA NAROZENÍ
 --------------
