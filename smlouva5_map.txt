@@ -32,14 +32,14 @@ DATA
 
 ADRESY
 ------
-[[ADDRESS_10]]: trvale bytem Lesní 10, 787 01 Šumperk
-[[ADDRESS_1]]: trvale bytem Na Výsluní 8, 779 00 Olomouc
-[[ADDRESS_2]]: trvale bytem V Koutech 123, 110 00 Praha
-[[ADDRESS_3]]: trvale bytem U Trati 66, 602 00 Brno
-[[ADDRESS_4]]: trvale bytem Slunečná 45, 370 01 České
-[[ADDRESS_5]]: trvale bytem Družstevní 17, 736 01 Havířov
-[[ADDRESS_6]]: trvale bytem Lipová 9, 460 01 Liberec
-[[ADDRESS_7]]: trvale bytem Komenského 5, 400 01 Ústí
-[[ADDRESS_8]]: trvale bytem Na Lani 77, 290 01 Poděbrady
-[[ADDRESS_9]]: trvale bytem Horská 3, 500 03 Hradec
+[[ADDRESS_10]]: Lesní 10, 787 01 Šumperk
+[[ADDRESS_1]]: Na Výsluní 8, 779 00 Olomouc
+[[ADDRESS_2]]: V Koutech 123, 110 00 Praha
+[[ADDRESS_3]]: U Trati 66, 602 00 Brno
+[[ADDRESS_4]]: Slunečná 45, 370 01 České Budějovice
+[[ADDRESS_5]]: Družstevní 17, 736 01 Havířov
+[[ADDRESS_6]]: Lipová 9, 460 01 Liberec
+[[ADDRESS_7]]: Komenského 5, 400 01 Ústí nad Labem
+[[ADDRESS_8]]: Na Lani 77, 290 01 Poděbrady
+[[ADDRESS_9]]: Horská 3, 500 03 Hradec Králové
 

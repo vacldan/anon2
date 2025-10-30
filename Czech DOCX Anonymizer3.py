@@ -684,29 +684,30 @@ ADDRESS_RE = re.compile(
     r'(?![A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ][a-záčďéěíňóřšťúůýž]+,\s+bytem)'  # VYLUČUJE: "Jméno Příjmení, bytem"
     r'(?![A-Z]{2,3}\s+\d{6,9})'                      # VYLUČUJE: "AB 456789" (OP kódy)
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek ulice)
-    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (2-50 znaků, non-greedy)
+    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (non-greedy OK, ukončeno číslem)
     r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (25 nebo 25/8)
     r',\s*'                                          # Čárka POVINNÁ
     r'(?:\d{3}\s?\d{2}\s+)?'                         # PSČ volitelné (612 00)
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
-    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}?'              # Název města (non-greedy! - nezachytí "Číslo"/"Nar"/"Rodné")
-    r'(?=\s*(?:$|[,.\n()\[\]]|(?:Nar\.|RČ|Rodn[éě]|IČO|DIČ|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Číslo|Datum|Zastoupen|Jednatel|vyd[aá]n|dále)))',  # KRITICKÁ OPRAVA: přidány (, ), dále
+    r'[a-záčďéěíňóřšťúůýž\s\d]{1,60}'               # Název města (GREEDY! pro víceslovná města)
+    r'(?=\s*(?:$|[,.\n()\[\]]|(?:Nar\.|RČ|Rodn[éě]|IČO|DIČ|OP|Občansk|Tel\.|Telefon|E-mail|Kontakt|Číslo|Datum|Zastoupen|Jednatel|vyd[aá]n|dále)))',  # KRITICKÁ OPRAVA: greedy matching města
     re.UNICODE | re.IGNORECASE
 )
 
 # ADDRESS_WITH_ZIP_RE - adresy s PSČ BEZ prefixu (pro tabulky, kde prefix je v jiném cell)
 # Formát: "Ulice číslo, PSČ Město" - PSČ je POVINNÉ pro jednoznačnost
 # Příklad: "Čechova 14, 750 02 Přerov" v tabulce pod hlavičkou "Adresa trvalého pobytu"
+# KRITICKÁ OPRAVA: Non-greedy způsoboval rozsekání víceslovných měst (České Budějovice → České)
 ADDRESS_WITH_ZIP_RE = re.compile(
     r'(?<!\[)'                                       # Ne po '['
     r'\b([A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                      # Velké písmeno (začátek ulice)
-    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice
+    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice (non-greedy OK, ukončeno číslem)
     r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu
     r',\s*'                                          # Čárka
     r'\d{3}\s?\d{2}\s+'                              # PSČ POVINNÉ (612 00 nebo 61200)
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
-    r'[a-záčďéěíňóřšťúůýž\s\d]{1,40}?'              # Název města
-    r')\b',                                          # Word boundary
+    r'[a-záčďéěíňóřšťúůýž\s\d]{1,60}'               # Název města (GREEDY! pro víceslovná města)
+    r')(?=\s*(?:$|[,.\n()\[\]]|Tel\.|Telefon|E-mail|RČ|OP|Datum|Kontakt))',  # Lookahead místo \b
     re.UNICODE | re.IGNORECASE
 )
 
@@ -725,10 +726,10 @@ ADDRESS_REVERSE_RE = re.compile(
     r'(?:(?:v\s+ulic[ií]|na\s+adrese|v\s+dom[eě])\s+)'  # "v ulici " / "na adrese "
     r')'
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek města)
-    r'[a-záčďéěíňóřšťúůýž\s\d]{2,30}?'              # Název města (Praha 1, Brno)
+    r'[a-záčďéěíňóřšťúůýž\s\d]{2,50}'               # Název města (Praha 1, České Budějovice) - GREEDY pro víceslovná města
     r',\s+'                                          # Čárka a mezera
     r'[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]'                         # Velké písmeno (začátek ulice)
-    r'[a-záčďéěíňóřšťúůýž\s]{2,50}?'                # Název ulice
+    r'[a-záčďéěíňóřšťúůýž\s]{2,60}'                 # Název ulice - GREEDY pro víceslovné ulice
     r'\s+\d{1,4}(?:/\d{1,4})?'                      # Číslo domu (1621/11)
     r'(?=[\s,.]|$)',                                 # Zastaví se před mezerou, čárkou, tečkou nebo koncem
     re.UNICODE | re.IGNORECASE
@@ -1362,13 +1363,12 @@ class Anonymizer:
             prefix = prefix_match.group(0) if prefix_match else ''
 
             # Odstranění běžných prefixů adres (s dvojtečkou i bez)
-            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|Bytem|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:?\s*', '', v, flags=re.IGNORECASE)
+            # DŮLEŽITÉ: "trvale bytem" musí být před samotným "bytem" (delší vzor má přednost)
+            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|[Tt]rvale\s+bytem|[Bb]ytem|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:?\s*', '', v, flags=re.IGNORECASE)
 
-            # Odstranění prefixů "trvale bytem" (s dvojtečkou i bez)
-            v = re.sub(r'^(trvale\s+)?bytem\s*:?\s*', '', v, flags=re.IGNORECASE)
-
-            # Odstranění kontextových frází
-            v = re.sub(r'^.{0,30}?\b(na\s+adrese|v\s+domě|domu|v\s+ulic[ií])\s+', '', v, flags=re.IGNORECASE)
+            # Odstranění kontextových/narrativních frází (např. "NP domu na adrese", "v 2. NP domu", "domu na adrese")
+            # Zachytí různé varianty: "NP domu na adrese", "v 1. NP domu", "v domě na adrese", "na adrese", "v ulici"
+            v = re.sub(r'^(?:(?:v\s+)?(?:\d+\.)?\s*NP\s+)?(?:domu\s+)?(?:na\s+adrese|v\s+dom[eě]|v\s+ulic[ií])\s+', '', v, flags=re.IGNORECASE)
 
             # Odstranění závorek a všeho v nich
             v = re.sub(r'\s*\(.*?\)\s*', ' ', v, flags=re.IGNORECASE)
@@ -1393,7 +1393,21 @@ class Anonymizer:
         # KRITICKÁ OPRAVA: Adresy s PSČ BEZ prefixu (tabulky)
         # Musí být PRVNÍ, protože je nejspecifičtější (vyžaduje PSČ)
         def addr_with_zip_repl(m):
-            v = m.group(1)  # ADDRESS_WITH_ZIP_RE má capturing group
+            v = m.group(1).strip()  # ADDRESS_WITH_ZIP_RE má capturing group
+
+            # Odstranění běžných prefixů adres (stejně jako v addr_repl)
+            v = re.sub(r'^(Trvalé\s+bydliště|Bydliště|[Tt]rvale\s+bytem|[Bb]ytem|Adresa|Místo\s+(?:podnikání|výkonu\s+práce)|Sídlo\s+podnikání|Se\s+sídlem|Sídlo|Trvalý\s+pobyt)\s*:?\s*', '', v, flags=re.IGNORECASE)
+
+            # Odstranění kontextových/narrativních frází
+            v = re.sub(r'^(?:(?:v\s+)?(?:\d+\.)?\s*NP\s+)?(?:domu\s+)?(?:na\s+adrese|v\s+dom[eě]|v\s+ulic[ií])\s+', '', v, flags=re.IGNORECASE)
+
+            # Odstranění závorek
+            v = re.sub(r'\s*\(.*?\)\s*', ' ', v, flags=re.IGNORECASE)
+            v = re.sub(r'\s+', ' ', v).strip()
+
+            if not v:
+                return m.group(0)
+
             tag = self._get_or_create_tag('ADDRESS', v)
             self._record_value(tag, v)
             return tag

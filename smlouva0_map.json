@@ -1,36 +1,36 @@
 {
   "[[ADDRESS_10]]": [
-    "Smetanova 45, 500 02 Hradec"
+    "Smetanova 45, 500 02 Hradec Králové Číslo"
   ],
   "[[ADDRESS_11]]": [
-    "Na Výšinách 12, 148 00 Praha"
+    "Na Výšinách 12, 148 00 Praha 4 Nar"
   ],
   "[[ADDRESS_12]]": [
     "Jugoslávská 25, 613 00 Brno"
   ],
   "[[ADDRESS_13]]": [
-    "Pod Pavlačí 7, 140 00 Praha"
+    "Pod Pavlačí 7, 140 00 Praha 4 Rodné"
   ],
   "[[ADDRESS_14]]": [
-    "Janáčkovo nábřeží 13, 150 00 Praha"
+    "Janáčkovo nábřeží 13, 150 00 Praha 5"
   ],
   "[[ADDRESS_15]]": [
-    "Wenzigova 5, 120 00 Praha"
+    "Wenzigova 5, 120 00 Praha 2"
   ],
   "[[ADDRESS_16]]": [
-    "Přívozní 1058/8, 170 00 Praha"
+    "Přívozní 1058/8, 170 00 Praha 7 Rodné"
   ],
   "[[ADDRESS_17]]": [
-    "Nová 156, 252 19 Rudná"
+    "Nová 156, 252 19 Rudná u Prahy"
   ],
   "[[ADDRESS_18]]": [
-    "Novákova 45, 250 01 Brandýs"
+    "Novákova 45, 250 01 Brandýs nad Labem Rodné"
   ],
   "[[ADDRESS_19]]": [
     "Nová Ves 78"
   ],
   "[[ADDRESS_1]]": [
-    "Washingtonova 1621/11, 110 00 Praha"
+    "Washingtonova 1621/11, 110 00 Praha 1"
   ],
   "[[ADDRESS_2]]": [
     "Kollárova 28, 602 00 Brno"
@@ -39,10 +39,10 @@
     "Praha 1, Washingtonova 1621/11"
   ],
   "[[ADDRESS_4]]": [
-    "U Svatého Ducha 5/142, 301 00 Plzeň"
+    "U Svatého Ducha 5/142, 301 00 Plzeň Rodné"
   ],
   "[[ADDRESS_5]]": [
-    "Belgická 1247/23, 120 00 Praha"
+    "Belgická 1247/23, 120 00 Praha 2"
   ],
   "[[ADDRESS_6]]": [
     "Mánesova 87, 612 00 Brno"
@@ -54,7 +54,7 @@
     "Mánesova 87, Brno"
   ],
   "[[ADDRESS_9]]": [
-    "Vinohradská 2396/184, 130 00 Praha"
+    "Vinohradská 2396/184, 130 00 Praha 3"
   ],
   "[[BANK_1]]": [
     "2547896321/0800"
@@ -226,8 +226,8 @@
   ],
   "[[PERSON_11]]": [
     "Eva Horváthová",
-    "Horváthové",
     "Horváthová",
+    "Horváthové",
     "Evě Horváthové"
   ],
   "[[PERSON_12]]": [

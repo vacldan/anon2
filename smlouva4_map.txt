@@ -35,10 +35,10 @@ DATA
 
 ADRESY
 ------
-[[ADDRESS_1]]: trvale bytem Na Hrázi 21, 612 00 Brno
-[[ADDRESS_2]]: trvale bytem K Lesu 14, 370 01 České
-[[ADDRESS_3]]: trvale bytem U Studánky 58, 500 03 Hradec
-[[ADDRESS_4]]: trvale bytem Horní cesta 17, 674 01 Třebíč
-[[ADDRESS_5]]: trvale bytem Pod Skalkou 3, 101 00 Praha
-[[ADDRESS_6]]: trvale bytem Družstevní 66, 787 01 Šumperk
+[[ADDRESS_1]]: Na Hrázi 21, 612 00 Brno
+[[ADDRESS_2]]: K Lesu 14, 370 01 České Budějovice
+[[ADDRESS_3]]: U Studánky 58, 500 03 Hradec Králové
+[[ADDRESS_4]]: Horní cesta 17, 674 01 Třebíč
+[[ADDRESS_5]]: Pod Skalkou 3, 101 00 Praha
+[[ADDRESS_6]]: Družstevní 66, 787 01 Šumperk
 
